@@ -1,6 +1,12 @@
 # Mac 
 .DS_Store
 
+# Misc 
+**/data/
+**/wandb/
+**/models/
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
