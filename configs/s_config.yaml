@@ -22,11 +22,6 @@ random_seed: 56
 epochs: 1
 #epochs: 80
 
-# Metric hyperparameters
-# possible options [leep, logme, gcb]
-#transfer_metrics: []
-transfer_metrics: [leep, logme]
-
 # Model arch 
 #model:
 #  type: mlp 

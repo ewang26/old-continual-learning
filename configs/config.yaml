@@ -9,21 +9,13 @@ p: 1
 use_memory_set: False
 
 # Continual learning hyperparameters
-#learning_manager: mnist_split
-learning_manager: cifar10_split
-#learning_manager: cifar10_full
+learning_manager: mnist_split
 
 # Training hyperparameters
 lr: 0.001
 batch_size: 256
 random_seed: 56
-epochs: 5
-# epochs: 80
-
-# Metric hyperparameters
-# possible options [leep, logme, gcb]
-#transfer_metrics: [leep]
-transfer_metrics: []
+epochs: 1
 
 # Model arch 
 model:

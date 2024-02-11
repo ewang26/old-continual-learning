@@ -25,9 +25,6 @@ from training_utils import (
     plot_cifar_image,
 )
 from tasks import Task
-from LEEP import LEEP
-from LogME import LogME
-from GBC import GBC
 
 DEBUG = False
 
@@ -63,7 +60,6 @@ class ContinualLearningManager(ABC):
         model: nn.Module,
         dataset_path: str = "./data",
         use_wandb=True,
-        transfer_metrics: List[str] = None,
     ):
         """
         Args:
@@ -75,8 +71,6 @@ class ContinualLearningManager(ABC):
         self.use_wandb = use_wandb
 
         self.model = model
-        self.transfer_metrics = transfer_metrics
-        self.transfer_metric_dict = {"leep": LEEP, "logme": LogME(), "gbc": GBC}
 
         train_x, train_y, test_x, test_y = self._load_dataset(dataset_path=dataset_path)
         self.train_x = train_x
@@ -100,7 +94,7 @@ class ContinualLearningManager(ABC):
         )
 
         # Performance metrics
-        self.R_full = torch.ones(self.num_tasks, self.num_tasks) * -1   # Cutting logits :self.task_index+1
+        self.R_full = torch.ones(self.num_tasks, self.num_tasks) * -1   
         
 
     @abstractmethod
@@ -120,84 +114,6 @@ class ContinualLearningManager(ABC):
         """Load full dataset for all tasks"""
         pass
 
-    @torch.no_grad()
-    def evaluate_transfer_metrics(
-        self,
-        model: Optional[nn.Module] = None,
-    ) -> Dict[str, float]:
-        """Evaluate models for transfer to current task as per self.task_index
-
-        Args:
-            model: Model to evaluate. If none then 
-                use self.model
-        """
-
-        if model is None:
-            model = self.model
-
-        metric_vals = dict.fromkeys(self.transfer_metrics)
-        current_labels: List[int] = list(self._get_current_labels())
-
-        print("Evaluating metric values")
-        model.eval()
-        for metric in self.transfer_metrics:
-            if metric == "leep":
-                [x, y] = (
-                    self.tasks[self.task_index].train_x,
-                    self.tasks[self.task_index].train_y,
-                )
-                x = x.to(DEVICE)
-                pseudo_source_label, target_label = (
-                    model(x).detach().to("cpu"),
-                    y.numpy(),
-                )
-
-                pseudo_source_label = torch.softmax(
-                    pseudo_source_label, dim=-1
-                ).numpy()
-
-                leep = self.transfer_metric_dict[metric]
-                metric_vals[metric] = leep(pseudo_source_label, target_label)
-
-                # leep_val = metric_vals[metric].item()
-                # if self.use_wandb and leep_val:
-                #     wandb.log({f"leep_task_idx_{self.task_index}": leep_val})
-
-            if metric == "logme":
-                [x, y] = (
-                    self.tasks[self.task_index].train_x,
-                    self.tasks[self.task_index].train_y,
-                )
-                x = x.to(DEVICE)
-                f, y = model(x).detach().to("cpu").numpy(), y.numpy()
-
-                print(type(f), type(y))
-                print(f.shape, y.shape)
-
-                logme = self.transfer_metric_dict[metric]
-                metric_vals[metric] = logme.fit(f, y)
-
-            if metric == "gbc":
-                [x, y] = (
-                    self.tasks[self.task_index].train_x,
-                    self.tasks[self.task_index].train_y,
-                )
-                f_s, y = (
-                    model.forward(x, return_preactivations=True)[1],
-                    y.numpy(),
-                )
-
-                gbc = self.transfer_metric_dict[metric]
-                metric_vals[metric] = gbc(f_s, y, current_labels)
-
-            val = metric_vals[metric]
-            if self.use_wandb and val is not None:
-                wandb.log({f"{metric}_task_idx_{self.task_index}": val.item()})
-
-        # Return model to training mode
-        model.train()
-        
-        return metric_vals
 
     @torch.no_grad()
     def evaluate_task(
@@ -315,18 +231,9 @@ class ContinualLearningManager(ABC):
         criterion = nn.CrossEntropyLoss()  # CrossEntropyLoss for classification tasks
         optimizer = Adam(self.model.parameters(), lr=lr)
 
-        # Calculate metric value 
-        metric_vals: Dict[str, float] = self.evaluate_transfer_metrics()
-
-
         self.model.train()
         for _ in tqdm(range(epochs)):
             for batch_x, batch_y in train_dataloader:
-                if DEBUG and self.task_index == 1:
-                    # TODO make this generic to MNIST or CIFAR
-                    # TODO make degbugging config flag
-                    print(batch_y)
-                    plot_cifar_image(batch_x)
 
                 batch_x = batch_x.to(DEVICE)
                 batch_y = batch_y.to(DEVICE)
@@ -345,9 +252,7 @@ class ContinualLearningManager(ABC):
                 # Get gradient norms
                 l2_sum = 0
 
-                # clip_grad_norm_(self.model.parameters(), 0.2)
-
-                # TODO concatenate all vectors, flatten, take
+                # Record the sum of the L2 norms.
                 with torch.no_grad():
                     count = 0
                     for param in self.model.parameters():
@@ -374,7 +279,7 @@ class ContinualLearningManager(ABC):
             # For now as models are small just saving entire things
             torch.save(self.model, model_save_path)
 
-        return test_acc, test_backward_transfer, metric_vals
+        return test_acc, test_backward_transfer 
 
     def create_task(
         self,
@@ -489,10 +394,6 @@ class ContinualLearningManager(ABC):
         running_tasks = self.tasks[: self.task_index + 1]
         return set.union(*[task.task_labels for task in running_tasks])
 
-    def calculate_backward_transfer(self) -> Float:
-        T = self.task_index
-        # TODO Complete
-
 
 class Cifar100Manager(ContinualLearningManager, ABC):
     """ABC for Cifar100 Manager. Handles downloading dataset"""
@@ -503,14 +404,12 @@ class Cifar100Manager(ContinualLearningManager, ABC):
         model: nn.Module,
         dataset_path: str = "./data",
         use_wandb=True,
-        transfer_metrics: List[str] = None,
     ):
         super().__init__(
             memory_set_manager=memory_set_manager,
             dataset_path=dataset_path,
             use_wandb=use_wandb,
             model=model,
-            transfer_metrics=transfer_metrics,
         )
 
     def _load_dataset(
@@ -564,14 +463,12 @@ class Cifar100ManagerSplit(Cifar100Manager):
         model: nn.Module,
         dataset_path: str = "./data",
         use_wandb=True,
-        transfer_metrics: List[str] = None,
     ):
         super().__init__(
             memory_set_manager=memory_set_manager,
             dataset_path=dataset_path,
             use_wandb=use_wandb,
             model=model,
-            transfer_metrics=transfer_metrics,
         )
 
     def _init_tasks(self) -> List[Task]:
@@ -597,14 +494,12 @@ class Cifar10Manager(ContinualLearningManager, ABC):
         model: nn.Module,
         dataset_path: str = "./data",
         use_wandb=True,
-        transfer_metrics: List[str] = None,
     ):
         super().__init__(
             memory_set_manager=memory_set_manager,
             dataset_path=dataset_path,
             use_wandb=use_wandb,
             model=model,
-            transfer_metrics=transfer_metrics,
         )
 
     def _load_dataset(
@@ -659,14 +554,12 @@ class Cifar10ManagerSplit(Cifar10Manager):
         model: nn.Module,
         dataset_path: str = "./data",
         use_wandb=True,
-        transfer_metrics: List[str] = None,
     ):
         super().__init__(
             memory_set_manager=memory_set_manager,
             dataset_path=dataset_path,
             use_wandb=use_wandb,
             model=model,
-            transfer_metrics=transfer_metrics,
         )
 
     def _init_tasks(self) -> List[Task]:
@@ -694,14 +587,12 @@ class Cifar10Full(Cifar10Manager):
         model: nn.Module,
         dataset_path: str = "./data",
         use_wandb=True,
-        transfer_metrics: List[str] = None,
     ):
         super().__init__(
             memory_set_manager=memory_set_manager,
             dataset_path=dataset_path,
             use_wandb=use_wandb,
             model=model,
-            transfer_metrics=transfer_metrics,
         )
 
     def _init_tasks(self) -> List[Task]:
@@ -725,14 +616,12 @@ class MnistManager(ContinualLearningManager, ABC):
         model: nn.Module,
         dataset_path: str = "./data",
         use_wandb=True,
-        transfer_metrics: List[str] = None,
     ):
         super().__init__(
             memory_set_manager=memory_set_manager,
             dataset_path=dataset_path,
             use_wandb=use_wandb,
             model=model,
-            transfer_metrics=transfer_metrics,
         )
 
     def _load_dataset(
@@ -781,13 +670,11 @@ class MnistManager2Task(MnistManager):
         model: nn.Module,
         dataset_path: str = "./data",
         use_wandb=True,
-        transfer_metrics: List[str] = None,
     ):
         super().__init__(
             memory_set_manager=memory_set_manager,
             dataset_path=dataset_path,
             use_wandb=use_wandb,
-            transfer_metrics=transfer_metrics,
             model=model,
         )
 
@@ -819,13 +706,11 @@ class MnistManagerSplit(MnistManager):
         model: nn.Module,
         dataset_path: str = "./data",
         use_wandb=True,
-        transfer_metrics: List[str] = None,
     ):
         super().__init__(
             memory_set_manager=memory_set_manager,
             dataset_path=dataset_path,
             use_wandb=use_wandb,
-            transfer_metrics=transfer_metrics,
             model=model,
         )
 

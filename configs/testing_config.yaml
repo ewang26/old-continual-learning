@@ -20,10 +20,6 @@ batch_size: 256
 random_seed: 56
 epochs: 50
 
-# Metric hyperparameters
-# possible options [leep, logme, gcb]
-transfer_metrics: [leep]
-
 # Model arch 
 #model:
 #  type: mlp 

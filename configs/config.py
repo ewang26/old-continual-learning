@@ -42,6 +42,10 @@ class Config:
             if key == "memory_set_manager":
                 if val == "random":
                     setattr(self, key, RandomMemorySetManager)
+                else:
+                    raise ValueError(
+                        f"{val} memory set manager is not valid"
+                    )
             elif key == "learning_manager":
                 if val == "mnist_split":
                     setattr(self, key, MnistManagerSplit)
@@ -51,6 +55,10 @@ class Config:
                     setattr(self, key, Cifar100ManagerSplit)
                 elif val == "cifar10_full":
                     setattr(self, key, Cifar10Full)
+                else:
+                    raise ValueError(
+                        f"{val} learning manager is not valid"
+                    )
             elif key == "model":
                 model_type = val["type"]
                 model_params = val["params"]
@@ -61,7 +69,7 @@ class Config:
                     self.model.weight_init()
                 else:
                     raise ValueError(
-                        f"{model_type} model hasn't been implemented in this code"
+                        f"{model_type} model is not valid"
                     )
 
                 # Set model name 
