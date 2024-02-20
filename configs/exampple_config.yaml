@@ -1,0 +1,33 @@
+# WandB stuff, change according to user
+use_wandb: True
+wandb_project_name: transfer_to_continual_learning
+wandb_profile: lukebailey
+
+# Memory set hyperparameters
+memory_set_manager: random
+p: 1
+use_memory_set: False
+
+# Continual learning hyperparameters
+learning_manager: mnist_split
+
+# Training hyperparameters
+lr: 0.001
+batch_size: 256
+random_seed: 56
+epochs: 50
+
+# Model arch 
+model:
+  type: mlp 
+  params: 
+    sizes: [784, 1000, 10] 
+    acts: [relu]
+
+model_save_dir: ./models/mnist_split/example_model
+model_load_dir: ./models/mnist_split/example_model
+
+# Logging information
+experiment_tag: "1_1"
+experiment_metadata_path: ./configs/experiment_12_28/runs.csv
+
