@@ -5,6 +5,7 @@
 **/data/
 **/wandb/
 **/models/
+**/artifacts/
 
 
 # Byte-compiled / optimized / DLL files
