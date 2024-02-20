@@ -41,7 +41,7 @@ what different tasks the continual learning training consists of.
 * `random_seed`: random seed.
 * `epochs`: number of training epochs per task.
 * `model_save_dir`: directory to save trained models to after each task.
-* `model_load_dir: directory to load trained models from. If given, them 
+* `model_load_dir`: directory to load trained models from. If given, them 
 model_save_dir is ignored and no model will actually be trained, only 
 pretrained models are loaded from memory.
 * `experiment_tag`: tag put on wandb run.
