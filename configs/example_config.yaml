@@ -1,7 +1,7 @@
 # WandB stuff, change according to user
 use_wandb: True
-wandb_project_name: transfer_to_continual_learning
-wandb_profile: lukebailey
+wandb_project_name: continuallearning
+wandb_profile: erikwang
 
 # Memory set hyperparameters
 memory_set_manager: random
