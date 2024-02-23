@@ -24,8 +24,8 @@ model:
     sizes: [784, 1000, 10] 
     acts: [relu]
 
-model_save_dir: ./models/mnist_split/example_model
-model_load_dir: ./models/mnist_split/example_model
+# model_save_dir: ./models/mnist_split/example_model
+# model_load_dir: ./models/mnist_split/example_model
 
 # Logging information
 experiment_tag: "1_1"
