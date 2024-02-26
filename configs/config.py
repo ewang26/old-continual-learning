@@ -18,6 +18,11 @@ import numpy as np
 class Config:
     def __init__(self, config_dict: Dict[str, Union[str, int, float]]):
         self.config_dict = config_dict
+        
+        # for batch training and evaluation
+        self.p_arr = np.array(self.config_dict['p_arr'])
+        self.num_samples = np.array(self.config_dict['num_samples'])
+        #print(self.p_arr)
 
         # String run_name for wandb / logfiles
         self.run_name = (
@@ -82,6 +87,8 @@ class Config:
                 self.model_save_dir = Path(val)
             elif key == "experiment_metadata_path": 
                 self.experiment_metadata_path = Path(val)
+            elif key == "grad_save_dir":
+                self.grad_save_dir = Path(val)
             else:
                 setattr(self, key, val)
 

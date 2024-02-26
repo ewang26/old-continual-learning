@@ -198,6 +198,64 @@ class ContinualLearningManager(ABC):
         model.train()
 
         return test_acc, backward_transfer
+    
+    def compute_gradients_at_ideal(
+        self,
+        model: Optional[nn.Module] = None,
+        grad_save_path: Optional[Path] = None
+    ):
+        """Given an ideal model, loop through different p, and evaluate gradients at each end task parameters 
+        
+        """
+
+        # load data and labels
+        _, test_dataloader = self._get_task_dataloaders(
+                use_memory_set=False, batch_size=64
+            )
+        
+        current_labels: List[int] = list(self._get_current_labels())
+
+        # set model to eval, define loss fn
+        model.train()
+        model.to(DEVICE)
+        criterion = nn.CrossEntropyLoss()
+
+        # loop through batches
+        for batch_x, batch_y in test_dataloader:
+
+            # i think we need to zero gradients here as well? not sure if param grad also accumulates without optimizer
+            for param in model.parameters():
+                param.grad = None
+
+            batch_x = batch_x.to(DEVICE)
+            batch_y = batch_y.to(DEVICE)
+
+            outputs = model(batch_x)
+
+            # Only select outputs for current labels
+            outputs_splice = outputs[:, current_labels]
+            loss = criterion(outputs_splice, batch_y)
+            loss.backward()
+
+            # Get gradient norms
+            l2_sum = 0
+
+            # Record the sum of the L2 norms.
+            with torch.no_grad():
+                for param in model.parameters():
+                    if param.grad is not None:
+                        # Compute the L2 norm of the gradient
+                        l2_norm = torch.norm(param.grad)
+                        l2_sum += l2_norm.item()
+
+        if grad_save_path is not None:
+            # For now as models are small just saving entire things
+            for name, p in model.named_parameters():
+                #print(p.grad.clone().detach().cpu().numpy())
+                np.save(f'{grad_save_path}/grad_{name}', p.grad.clone().detach().cpu().numpy())
+
+
+        return None
 
     def train(
         self,
@@ -275,9 +333,13 @@ class ContinualLearningManager(ABC):
             # evaluate model 
             test_acc, test_backward_transfer = self.evaluate_task(test_dataloader)
 
+
         if model_save_path is not None:
             # For now as models are small just saving entire things
-            torch.save(self.model, model_save_path)
+            torch.save(self.model, f"{model_save_path}/model.pt")
+            for name, p in self.model.named_parameters():
+                #print(p.grad.clone().detach().cpu().numpy())
+                np.save(f'{model_save_path}/grad_{name}', p.grad.clone().detach().cpu().numpy())
 
         return test_acc, test_backward_transfer 
 
