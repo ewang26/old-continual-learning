@@ -1,3 +1,5 @@
+This is Luke Bailey's original repo [02/25/2023]
+
 # Continual Learning Starter Code
 
 This repository contains code for running basic continual learning training pipelines. 
