@@ -120,6 +120,7 @@ class ContinualLearningManager(ABC):
         self,
         test_dataloader: Optional[DataLoader] = None,
         model: Optional[nn.Module] = None,
+        use_memory_set: bool = False,
     ) -> Tuple[float, float]:
         """Evaluate models on current task.
         
@@ -134,7 +135,7 @@ class ContinualLearningManager(ABC):
             model = self.model
         if test_dataloader is None:
             _, test_dataloader = self._get_task_dataloaders(
-                use_memory_set=False, batch_size=64
+                use_memory_set=use_memory_set, batch_size=64
             )
 
         current_labels: List[int] = list(self._get_current_labels())
@@ -290,7 +291,9 @@ class ContinualLearningManager(ABC):
         optimizer = Adam(self.model.parameters(), lr=lr)
 
         self.model.train()
+        callbacks = {'loss': []}
         for _ in tqdm(range(epochs)):
+            total_loss = 0
             for batch_x, batch_y in train_dataloader:
 
                 batch_x = batch_x.to(DEVICE)
@@ -304,7 +307,7 @@ class ContinualLearningManager(ABC):
                     :, current_labels
                 ]  # Only select outputs for current labels
                 loss = criterion(outputs, batch_y)
-
+                total_loss += loss.detach().cpu()
                 # Backward pass and optimize
                 loss.backward()
                 # Get gradient norms
@@ -330,6 +333,8 @@ class ContinualLearningManager(ABC):
                         }
                     )
 
+            callbacks['loss'].append(total_loss)
+
             # evaluate model 
             test_acc, test_backward_transfer = self.evaluate_task(test_dataloader)
 
@@ -340,6 +345,9 @@ class ContinualLearningManager(ABC):
             for name, p in self.model.named_parameters():
                 #print(p.grad.clone().detach().cpu().numpy())
                 np.save(f'{model_save_path}/grad_{name}', p.grad.clone().detach().cpu().numpy())
+
+            # save loss
+            np.save(f'{model_save_path}/loss.npy', np.array(callbacks['loss']))
 
         return test_acc, test_backward_transfer 
 

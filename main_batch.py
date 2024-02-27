@@ -45,10 +45,12 @@ def main(config: Config):
     if config.use_wandb:
         setup_wandb(config)
 
-    for p in config.p_arr:
+    # loop through all p-values that we list
+    for p_index, p in enumerate(config.p_arr):
         print(f'*** starting experiment for p = {p}')
 
-        num_samples = getattr(config, "num_samples", 1)
+        # each p has a particular # samples to use: index into list of num_samples to use
+        num_samples = getattr(config, "num_samples", 0)[p_index]
 
         for sample_num in range(num_samples):
             random_seed = np.random.randint(0,1e6)
@@ -81,11 +83,17 @@ def main(config: Config):
                 if model_load_dir is not None:
                     # Load model and run evaluation
                     post_train_model_load_path = (
-                        f'{model_load_dir}/1/task_{task_num}/model.pt'
+                        f'{model_load_dir}/1/train/task_{task_num}/model.pt'
                     )
                     post_train_model = torch.load(post_train_model_load_path)
                     # Can get pre training model 
-                    acc, backward_transfer = manager.evaluate_task(model=post_train_model)
+                    ### Eventually, we want to put gradients, training loss in evaluate task as well
+                    ## So, we also want the accuracy on the memory set eval on ideal model
+                    ## current evaluate_task uses test dataloader, so we use train dataloader here as a hack
+                    acc, backward_transfer = manager.evaluate_task(model=post_train_model,
+                                                                   test_dataloader = manager._get_task_dataloaders(use_memory_set = config.use_memory_set, 
+                                                                                                                   batch_size = 64)[0])
+
 
                     # save gradients w.r.t ideal weights
                     p_save_path = f"{model_load_dir}/{p}" # save path for 0.x of memory set
@@ -95,17 +103,24 @@ def main(config: Config):
                     grad_save_path = f"{run_save_path}/ideal_grad_task_{task_num}"
                     if not os.path.exists(grad_save_path):
                         os.mkdir(grad_save_path)
+                    
+                    # save gradients function
                     manager.compute_gradients_at_ideal(
                         model = post_train_model,
                         grad_save_path = grad_save_path)
                 else:
+                    # right now, training is only implemented for 1 sample per p
+                    assert num_samples == 1
+
                     # Train model from scratch
                     if model_save_dir is not None:
                         #create save dir
-                        if not os.path.exists(model_save_dir):
-                            os.mkdir(model_save_dir)
+                        if not os.path.exists(model_save_dir): os.mkdir(model_save_dir)
+                        # create train save dir
+                        model_train_save_dir = f'{model_save_dir}/train'
+                        if not os.path.exists(model_train_save_dir): os.mkdir(model_train_save_dir)
                         #create task specific save dir
-                        model_save_path = f"{model_save_dir}/{p}/task_{task_num}"
+                        model_save_path = f"{model_train_save_dir}/task_{task_num}"
                         if not os.path.exists(model_save_path):
                             os.mkdir(model_save_path)
                     else:
@@ -120,13 +135,18 @@ def main(config: Config):
                         model_save_path=model_save_path,
                     )
 
-                # Collect performance metrics
+                # Collect performance metrics, for 1 sample
                 final_accs.append(acc)
                 final_backward_transfers.append(backward_transfer)
 
                 # Advance the task
                 if task_num < num_tasks - 1:
                     manager.next_task()
+
+            # for the sample, save accs in array and save in gradient path. eventually we push this to wandb
+            acc_save_path = model_train_save_dir if (model_save_dir is not None) else run_save_path
+            np.save(f'{acc_save_path}/acc.npy', final_accs)
+            print(f'acc: {final_accs}')
 
         # Log all final results
         tasks = list(range(num_tasks))
