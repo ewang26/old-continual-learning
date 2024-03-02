@@ -34,6 +34,7 @@ class Config:
         if "random_seed" in config_dict:
             print("Seed given in config, setting deterministic run")
             random_seed = config_dict["random_seed"]
+            self.random_seed = random_seed
 
             # Set run to be deterministic
             torch.manual_seed(random_seed)

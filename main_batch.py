@@ -44,6 +44,8 @@ def setup_wandb(config: Config):
 def main(config: Config):
     if config.use_wandb:
         setup_wandb(config)
+    
+    rng = np.random.default_rng(seed = config.random_seed)
 
     # loop through all p-values that we list
     for p_index, p in enumerate(config.p_arr):
@@ -53,7 +55,7 @@ def main(config: Config):
         num_samples = getattr(config, "num_samples", 0)[p_index]
 
         for sample_num in range(num_samples):
-            random_seed = np.random.randint(0,1e6)
+            random_seed = int(rng.integers(low=0, high=1e6))
 
             memory_set_manager = config.memory_set_manager(
                 p, random_seed=random_seed
@@ -117,7 +119,7 @@ def main(config: Config):
                         #create save dir
                         if not os.path.exists(model_save_dir): os.mkdir(model_save_dir)
                         # create train save dir
-                        model_train_save_dir = f'{model_save_dir}/train'
+                        model_train_save_dir = f'{model_save_dir}/{p}/train'
                         if not os.path.exists(model_train_save_dir): os.mkdir(model_train_save_dir)
                         #create task specific save dir
                         model_save_path = f"{model_train_save_dir}/task_{task_num}"
