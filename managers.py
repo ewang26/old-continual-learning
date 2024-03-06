@@ -265,6 +265,7 @@ class ContinualLearningManager(ABC):
         lr: float = 0.01,
         use_memory_set: bool = False,
         model_save_path : Optional[Path] = None,
+        train_debug: bool = False
     ) -> Tuple[float, float, Dict[str, float]]:
         """Train on all tasks with index <= self.task_index
 
@@ -338,6 +339,11 @@ class ContinualLearningManager(ABC):
             # evaluate model 
             test_acc, test_backward_transfer = self.evaluate_task(test_dataloader)
 
+        if train_debug:
+            for name, p in self.model.named_parameters():
+                print(name, p.grad.clone().detach().cpu().numpy())
+        
+                input()
 
         if model_save_path is not None:
             # For now as models are small just saving entire things

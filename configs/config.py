@@ -24,6 +24,9 @@ class Config:
         self.num_samples = np.array(self.config_dict['num_samples'])
         #print(self.p_arr)
 
+        # debugging config
+        self.train_debug = self.config_dict['train_debug']
+
         # String run_name for wandb / logfiles
         self.run_name = (
             f"Manager.{config_dict['learning_manager']}_"
