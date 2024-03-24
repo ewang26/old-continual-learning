@@ -23,7 +23,9 @@ def vec_to_img(vec):
     vec = 1d numpy array
     '''
     img_length = int(len(vec)**0.5)
-    return np.reshape(vec, (img_length, img_length))[..., np.newaxis]
+    img = np.reshape(vec, (img_length, img_length))
+    img = ((img - img.min()/(img.max()+1e-6))*256).astype(np.uint8)
+    return img
 
 def get_rmse(i1, i2):
     max_p = max(np.max(i1), np.max(i2))
