@@ -75,6 +75,8 @@ def main(config: Config):
             final_backward_transfers = []
 
             model_save_dir = getattr(config, "model_save_dir", None)
+            if not os.path.exists(model_save_dir):
+                os.mkdir(model_save_dir)
             #model_save_dir = f'{model_save_dir}/{p}/'
             model_load_dir = getattr(config, "model_load_dir", None)
             if model_load_dir is not None:
@@ -117,9 +119,10 @@ def main(config: Config):
                     # Train model from scratch
                     if model_save_dir is not None:
                         #create save dir
-                        if not os.path.exists(model_save_dir): os.mkdir(model_save_dir)
+                        model_p_save_dir = f'{model_save_dir}/{p}'
+                        if not os.path.exists(model_p_save_dir): os.mkdir(model_p_save_dir)
                         # create train save dir
-                        model_train_save_dir = f'{model_save_dir}/{p}/train'
+                        model_train_save_dir = f'{model_p_save_dir}/train'
                         if not os.path.exists(model_train_save_dir): os.mkdir(model_train_save_dir)
                         #create task specific save dir
                         model_save_path = f"{model_train_save_dir}/task_{task_num}"

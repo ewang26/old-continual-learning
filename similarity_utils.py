@@ -4,6 +4,10 @@
 
 import numpy as np
 from image_similarity_measures.quality_metrics import rmse, issm, psnr, ssim, uiq
+from skimage.metrics import structural_similarity as ssim
+from skimage.metrics import peak_signal_noise_ratio as psnr
+
+
 
 '''
 Installation Notes: 
