@@ -165,6 +165,7 @@ class ContinualLearningManager(ABC):
                 task_wise_correct[i] += torch.sum(correct[task_idxs == i]).item()
                 task_wise_examples[i] += torch.sum(task_idxs == i).item()
 
+            # TO-DO: use "correct" variable here to simplify code
             total_correct += (
                 (torch.argmax(outputs_splice, dim=1) == batch_y).sum().item()
             )
@@ -257,7 +258,7 @@ class ContinualLearningManager(ABC):
 
         return None
 
-    def train(
+    def train_0307(
         self,
         epochs: int = 20,
         batch_size: int = 32,
@@ -341,7 +342,95 @@ class ContinualLearningManager(ABC):
                 #print(p.grad.clone().detach().cpu().numpy())
                 np.save(f'{model_save_path}/grad_{name}', p.grad.clone().detach().cpu().numpy())
 
-        return test_acc, test_backward_transfer 
+        return test_acc, test_backward_transfer
+
+    def train(
+        self,
+        epochs: int = 20,
+        batch_size: int = 32,
+        lr: float = 0.01,
+        use_memory_set: bool = False,
+        model_save_path : Optional[Path] = None,
+    ) -> Tuple[float, float, Dict[str, float]]:
+        """Train on all tasks with index <= self.task_index
+
+        Args:
+            epochs: Number of epochs to train for.
+            batch_size: Batch size to use for training.
+            lr: Learning rate to use for training.
+            use_memory_set: True then tasks with index < task_index use memory set,
+                otherwise they use the full training set.
+            save_model_path: If not None, then save the model to this path.
+
+        Returns:
+            Final test accuracy.
+        """
+        self.model.train()
+        self.model.to(DEVICE)
+
+        train_dataloader_list, test_dataloader, _, _ = self._get_task_dataloaders(use_memory_set, batch_size)
+        # current_labels: List[int] = list(self._get_current_labels())
+        current_labels = self._get_task_label_list()
+        # Train on batches
+        criterion_list = [nn.CrossEntropyLoss() for i in range(len(train_dataloader_list))] # CrossEntropyLoss for classification tasks
+        optimizer = Adam(self.model.parameters(), lr=lr)
+
+        num_batches = np.ceil(len(train_dataloader_list[0])/batch_size)
+        self.model.train()
+        for _ in tqdm(range(epochs)):   # basic training loop over multiple iterations/epochs
+            iter_dl_list = [iter(dl) for dl in train_dataloader_list]
+            for _ in range(int(num_batches)):   # looping over each batch of the data
+                batches = [next(idl) for idl in iter_dl_list]
+                loss = 0
+                for i in range(len(batches)):   # within each batch, looping over the 
+                    batch_x = batches[i][0].to(DEVICE)
+                    batch_y = batches[i][1].to(DEVICE)
+
+                    optimizer.zero_grad()
+                    # Forward pass
+                    outputs = self.model(batch_x)
+
+                    outputs = outputs[
+                        :, current_labels[i]
+                    ]  # Only select outputs for current labels
+                    loss += criterion_list[i](outputs, batch_y - 2*i)   # TODO: get rid of 2*i to get crossentropy labels to [0,1] in a hacky way
+                loss.backward()
+
+                # Get gradient norms
+                l2_sum = 0
+
+                # Record the sum of the L2 norms.
+                with torch.no_grad():
+                    count = 0
+                    for param in self.model.parameters():
+                        if param.grad is not None:
+                            # Compute the L2 norm of the gradient
+                            l2_norm = torch.norm(param.grad)
+                            l2_sum += l2_norm.item()
+                            count += 1
+                optimizer.step()
+
+                if self.use_wandb:
+                        wandb.log(
+                            {
+                                f"loss_task_idx_{self.task_index}": loss.item(),
+                                f"grad_norm_task_idx_{self.task_index}": l2_sum,
+                            }
+                        )
+
+            # evaluate model
+            test_acc, test_backward_transfer = self.evaluate_task(test_dataloader)
+
+        if model_save_path is not None:
+            # For now as models are small just saving entire things
+            torch.save(self.model, f"{model_save_path}/model.pt")
+            for name, p in self.model.named_parameters():
+                #print(p.grad.clone().detach().cpu().numpy())
+                np.save(f'{model_save_path}/grad_{name}', p.grad.clone().detach().cpu().numpy())
+
+        return test_acc, test_backward_transfer
+
+        # PRODUCTION BREAK 03/19
 
     def create_task(
         self,
@@ -349,7 +438,7 @@ class ContinualLearningManager(ABC):
         memory_set_manager: MemorySetManager,
         active: bool = False,
     ) -> Task:
-        """Generate a  task with the given target labels.
+        """Generate a task with the given target labels.
 
         Args:
             target_labels: Set of labels that this task uses.
@@ -374,7 +463,7 @@ class ContinualLearningManager(ABC):
 
         return task
 
-    def _get_task_dataloaders(
+    def _get_task_dataloaders_0307(
         self, use_memory_set: bool, batch_size: int
     ) -> Tuple[DataLoader, DataLoader]:
         """Collect the datasets of all tasks <= task_index and return it as a dataloader.
@@ -386,7 +475,7 @@ class ContinualLearningManager(ABC):
             Tuple of train dataloader then test dataloader.
         """
 
-        # Get tasks
+        # Get tasks (task_index for now is 2)
         running_tasks = self.tasks[: self.task_index + 1]
         for task in running_tasks:
             assert task.active
@@ -410,10 +499,13 @@ class ContinualLearningManager(ABC):
         test_x_attr = "test_x"
         test_y_attr = "test_y"
 
+        # combining all the x data in the memory sets for the memory tasks
         combined_train_x = torch.cat(
             [getattr(task, memory_x_attr) for task in memory_tasks]
             + [getattr(terminal_task, terminal_x_attr)]
         )
+
+        # combining all the x data in the memory sets for the memory tasks
         combined_train_y = torch.cat(
             [getattr(task, memory_y_attr) for task in memory_tasks]
             + [getattr(terminal_task, terminal_y_attr)]
@@ -444,6 +536,152 @@ class ContinualLearningManager(ABC):
         test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=True)
 
         return train_dataloader, test_dataloader
+    
+    def _get_task_dataloaders(
+        self, use_memory_set: bool, batch_size: int
+    ) -> Tuple[DataLoader, DataLoader]:
+        """Collect the datasets of all tasks <= task_index and return it as a dataloader.
+
+        Args:
+            use_memory_set: Whether to use the memory set for tasks < task_index.
+            batch_size: Batch size to use for training.
+        Returns:
+            Tuple of train dataloader then test dataloader.
+        """
+
+        # Get tasks (task_index for now is 2)
+        running_tasks = self.tasks[: self.task_index + 1]
+        for task in running_tasks:
+            assert task.active
+
+        terminal_task = running_tasks[-1]
+        memory_tasks = running_tasks[:-1]  # This could be empty
+
+        # Create a dataset for all tasks <= task_index
+
+        if use_memory_set:
+            memory_x_attr = "memory_x"
+            memory_y_attr = "memory_y"
+            terminal_x_attr = "train_x"
+            terminal_y_attr = "train_y"
+        else:
+            memory_x_attr = "train_x"
+            memory_y_attr = "train_y"
+            terminal_x_attr = "train_x"
+            terminal_y_attr = "train_y"
+
+        test_x_attr = "test_x"
+        test_y_attr = "test_y"
+
+        # creating a list of data to use at a given training step
+        combined_train_x = [getattr(task, memory_x_attr) for task in memory_tasks]
+        combined_train_x.append(getattr(terminal_task, terminal_x_attr))
+
+        combined_train_y = [getattr(task, memory_y_attr) for task in memory_tasks]
+        combined_train_y.append(getattr(terminal_task, terminal_y_attr))
+        
+        # duplicate the memory sets within the train x and y
+        repeated_train_x = []
+        repeated_train_y = []
+        terminal_task_data_len = len(combined_train_x[-1])
+        print('term task data len')
+        print(terminal_task_data_len)
+        memory_task_data_len = len(combined_train_x[0])
+        memory_set_ratio = int(np.floor(terminal_task_data_len/memory_task_data_len) + 1)
+        for i in range(len(combined_train_x) - 1):
+            # duplicating the memory sets until they are as long as the terminal task dataset length
+            # memory_task_data_len = len(combined_train_x[i])
+            # memory_set_ratio = int(np.floor(terminal_task_data_len/memory_task_data_len) + 1)
+            # repeated train is a list of 
+            repeated_train_x.append(torch.from_numpy(np.tile(combined_train_x[i], memory_set_ratio)[:terminal_task_data_len]))
+            repeated_train_y.append(torch.from_numpy(np.tile(combined_train_y[i], memory_set_ratio)[:terminal_task_data_len]))
+        repeated_train_x.append(getattr(terminal_task, terminal_x_attr))
+        repeated_train_y.append(getattr(terminal_task, terminal_y_attr))
+        
+        # memory set version of the tests
+        memory_test_x = [getattr(task, memory_x_attr) for task in memory_tasks]
+        memory_test_x.append(getattr(terminal_task, terminal_x_attr))
+
+        memory_test_y = [getattr(task, memory_y_attr) for task in memory_tasks]
+        memory_test_y.append(getattr(terminal_task, terminal_y_attr))
+
+        # full version of the test data
+        full_test_x = [getattr(task, test_x_attr) for task in running_tasks]
+        full_test_y = [getattr(task, test_y_attr) for task in running_tasks]
+
+        # copying code from old test dataloader
+        combined_test_x = torch.cat(
+            [getattr(task, test_x_attr) for task in running_tasks]
+        )
+        combined_test_y = torch.cat(
+            [getattr(task, test_y_attr) for task in running_tasks]
+        )
+        test_dataset = TensorDataset(combined_test_x, combined_test_y)
+        test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=True)
+
+
+        # creating a list of dataloaders for the train set, the memory test data, and the full test data for up to the current task
+        train_dataloader_list = []
+        memory_test_dataloader_list = []
+        full_test_dataloader_list = []
+        for i in range(len(repeated_train_x)):
+            print(repeated_train_x[i].shape)
+            print(repeated_train_y[i].shape)
+            train_dataset = TensorDataset(repeated_train_x[i], repeated_train_y[i])
+            train_dataloader = DataLoader(
+                train_dataset, batch_size=batch_size, shuffle=False
+            )   # setting shuffle to false because we duplicated memory sets and we don't want duplicates in same batch
+            train_dataloader_list.append(train_dataloader)
+
+            memory_test_dataset = TensorDataset(memory_test_x[i], memory_test_y[i])
+            memory_test_dataloader = DataLoader(
+                memory_test_dataset, batch_size=batch_size, shuffle=True
+            )
+            memory_test_dataloader_list.append(memory_test_dataloader)
+
+            full_test_dataset = TensorDataset(full_test_x[i], full_test_y[i])
+            full_test_dataloader = DataLoader(
+                full_test_dataset, batch_size=batch_size, shuffle=True
+            )
+            full_test_dataloader_list.append(full_test_dataloader)
+
+        return train_dataloader_list, test_dataloader, memory_test_dataloader_list, full_test_dataloader_list
+
+
+
+
+        # train_dataset = TensorDataset(combined_train_x, combined_train_y)
+        # memory_test_dataset = TensorDataset(memory_test_x, memory_test_y)
+
+
+        # # combined_test_x = torch.cat(
+        # #     [getattr(task, test_x_attr) for task in running_tasks]
+        # # )
+        # # combined_test_y = torch.cat(
+        # #     [getattr(task, test_y_attr) for task in running_tasks]
+        # # )
+
+        # # Identify the labels for the combined dataset
+        # # TODO use this later
+        # combined_labels = set.union(*[task.task_labels for task in running_tasks])
+
+        # # Randomize the train dataset
+        # n = combined_train_x.shape[0]
+        # perm = torch.randperm(n)
+        # combined_train_x = combined_train_x[perm]
+        # combined_train_y = combined_train_y[perm]
+
+        # # Put into batches
+        # train_dataset = TensorDataset(combined_train_x, combined_train_y)
+        # test_dataset = TensorDataset(combined_test_x, combined_test_y)
+        # train_dataloader = DataLoader(
+        #     train_dataset, batch_size=batch_size, shuffle=True
+        # )
+        # test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=True)
+
+        
+    
+    ##### end of 03/07 edits
 
     def next_task(self) -> None:
         """Iterate to next task"""
@@ -456,6 +694,17 @@ class ContinualLearningManager(ABC):
         running_tasks = self.tasks[: self.task_index + 1]
         return set.union(*[task.task_labels for task in running_tasks])
 
+
+    def _get_task_label_list(self):
+        """
+        Creates a list of task labels corresponding to the tasks that have been run.
+        """
+        label_list = []
+        running_tasks = self.tasks[: self.task_index + 1]
+        for task in running_tasks:
+            label_list.append(list(task.task_labels))
+        return label_list
+                
 
 class Cifar100Manager(ContinualLearningManager, ABC):
     """ABC for Cifar100 Manager. Handles downloading dataset"""

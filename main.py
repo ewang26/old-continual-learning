@@ -45,10 +45,12 @@ def main(config: Config):
     if config.use_wandb:
         setup_wandb(config)
 
+    # creating memory set with p fraction of full data
     memory_set_manager = config.memory_set_manager(
         p=config.p, random_seed=config.random_seed
     )
 
+    # using manager corresponding to learning set manager given in config 
     manager = config.learning_manager(
         memory_set_manager=memory_set_manager,
         use_wandb=config.use_wandb,
@@ -80,7 +82,8 @@ def main(config: Config):
         else:
             # Train model from scratch
             if model_save_dir is not None:
-                model_save_path = model_save_dir / f"{config.model_name}_task_{i}.pt"
+                # model_save_path = model_save_dir / f"{config.model_name}_task_{i}.pt"
+                model_save_path = model_save_dir / f"task_{i}"
             else:
                 model_save_path = None
 
