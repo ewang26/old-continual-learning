@@ -12,8 +12,8 @@ p: 0.1
 
 # for gradient evaluating
 p_arr: [0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5]
-#num_samples: [10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10]
-num_samples: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+num_samples: [10, 10, 10, 10, 10, 10, 10, 10, 10]
+#num_samples: [1, 1, 1, 1, 1, 1, 1, 1, 1]
 
 #debugging 
 train_debug: False
@@ -53,5 +53,6 @@ model:
 
 
 #model_save_dir: models/mnist_split #/1/
-model_save_dir: models/cifar10_split
+#model_save_dir: models/cifar10_split
 #model_load_dir: models/mnist_split
+model_load_dir: models/cifar10_split

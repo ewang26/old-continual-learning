@@ -75,7 +75,7 @@ def main(config: Config):
             final_backward_transfers = []
 
             model_save_dir = getattr(config, "model_save_dir", None)
-            if not os.path.exists(model_save_dir):
+            if (model_save_dir is not None) and (not os.path.exists(model_save_dir)):
                 os.mkdir(model_save_dir)
             #model_save_dir = f'{model_save_dir}/{p}/'
             model_load_dir = getattr(config, "model_load_dir", None)
