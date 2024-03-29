@@ -204,7 +204,8 @@ class ContinualLearningManager(ABC):
     def compute_gradients_at_ideal(
         self,
         model: Optional[nn.Module] = None,
-        grad_save_path: Optional[Path] = None
+        grad_save_path: Optional[Path] = None,
+        p: float = 1
     ):
         """Given an ideal model, loop through different p, and evaluate gradients at each end task parameters 
         
@@ -272,7 +273,8 @@ class ContinualLearningManager(ABC):
         use_memory_set: bool = False,
         model_save_path : Optional[Path] = None,
         train_debug: bool = False,
-        p: float = 1
+        p: float = 1,
+        use_weights: bool = False # whether or not to weight class 
     ) -> Tuple[float, float, Dict[str, float]]:
         """Train on all tasks with index <= self.task_index
 
@@ -296,12 +298,16 @@ class ContinualLearningManager(ABC):
         current_labels = list(self._get_current_labels())
 
         #create label weights
-        label_weights = np.ones(len(current_labels))
-        label_weights[:-1] = 1/p
-        label_weights = torch.from_numpy(label_weights).float()
+        if use_weights:
+            label_weights = np.ones(len(current_labels))
+            label_weights[:-1] = 1/p
+            label_weights = torch.from_numpy(label_weights).float()
+            criterion = nn.CrossEntropyLoss(weight = label_weights)
+        else:
+            criterion = nn.CrossEntropyLoss()
 
         # Train on batches
-        criterion = nn.CrossEntropyLoss(weight = label_weights)  # CrossEntropyLoss for classification tasks
+        #criterion = nn.CrossEntropyLoss(weight = label_weights)  # CrossEntropyLoss for classification tasks
         optimizer = Adam(self.model.parameters(), lr=lr)
 
         self.model.train()
@@ -358,12 +364,14 @@ class ContinualLearningManager(ABC):
         
                 input()
 
+        self.compute_gradients_at_ideal(self.model, grad_save_path = model_save_path, p = p)
+
         if model_save_path is not None:
             # For now as models are small just saving entire things
             torch.save(self.model, f"{model_save_path}/model.pt")
-            for name, p in self.model.named_parameters():
-                #print(p.grad.clone().detach().cpu().numpy())
-                np.save(f'{model_save_path}/grad_{name}', p.grad.clone().detach().cpu().numpy())
+            # for name, p in self.model.named_parameters():
+            #     #print(p.grad.clone().detach().cpu().numpy())
+            #     np.save(f'{model_save_path}/grad_{name}', p.grad.clone().detach().cpu().numpy())
 
             # save loss
             np.save(f'{model_save_path}/loss.npy', np.array(callbacks['loss']))
@@ -560,7 +568,7 @@ class ContinualLearningManager(ABC):
         train_dataloader = DataLoader(
             train_dataset, batch_size=batch_size, shuffle=True
         )
-        test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=True)
+        test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
         return train_dataloader, test_dataloader
     

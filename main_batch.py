@@ -111,7 +111,8 @@ def main(config: Config):
                     # save gradients function
                     manager.compute_gradients_at_ideal(
                         model = post_train_model,
-                        grad_save_path = grad_save_path)
+                        grad_save_path = grad_save_path,
+                        p = p)
                 else:
                     # right now, training is only implemented for 1 sample per p
                     assert num_samples == 1
@@ -139,7 +140,8 @@ def main(config: Config):
                         use_memory_set=config.use_memory_set,
                         model_save_path=model_save_path,
                         train_debug = config.train_debug,
-                        p = p
+                        p = p,
+                        use_weights = True
                     )
 
                 # Collect performance metrics, for 1 sample
