@@ -138,7 +138,8 @@ def main(config: Config):
                         lr=config.lr,
                         use_memory_set=config.use_memory_set,
                         model_save_path=model_save_path,
-                        train_debug = config.train_debug
+                        train_debug = config.train_debug,
+                        p = p
                     )
 
                 # Collect performance metrics, for 1 sample
