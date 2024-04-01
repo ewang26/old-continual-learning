@@ -212,8 +212,8 @@ class ContinualLearningManager(ABC):
         """
 
         # load data and labels
-        _, test_dataloader = self._get_task_dataloaders(
-                use_memory_set=False, batch_size=64
+        train_dataloader, _ = self._get_task_dataloaders(
+                use_memory_set=True, batch_size=64, full_batch = True
             )
         
         current_labels: List[int] = list(self._get_current_labels())
@@ -229,7 +229,7 @@ class ContinualLearningManager(ABC):
         criterion = nn.CrossEntropyLoss(label_weights)
 
         # loop through batches
-        for batch_x, batch_y in test_dataloader:
+        for batch_x, batch_y in train_dataloader:
 
             # i think we need to zero gradients here as well? not sure if param grad also accumulates without optimizer
             for param in model.parameters():
@@ -502,7 +502,7 @@ class ContinualLearningManager(ABC):
         return task
 
     def _get_task_dataloaders(
-        self, use_memory_set: bool, batch_size: int
+        self, use_memory_set: bool, batch_size: int, full_batch: bool = False
     ) -> Tuple[DataLoader, DataLoader]:
         """Collect the datasets of all tasks <= task_index and return it as a dataloader.
 
@@ -565,10 +565,16 @@ class ContinualLearningManager(ABC):
         # Put into batches
         train_dataset = TensorDataset(combined_train_x, combined_train_y)
         test_dataset = TensorDataset(combined_test_x, combined_test_y)
-        train_dataloader = DataLoader(
-            train_dataset, batch_size=batch_size, shuffle=True
-        )
-        test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+        if full_batch:
+            train_dataloader = DataLoader(
+                train_dataset, batch_size=len(train_dataset), shuffle=True
+            )
+            test_dataloader = DataLoader(test_dataset, batch_size=len(test_dataset), shuffle=False)
+        else:
+            train_dataloader = DataLoader(
+                train_dataset, batch_size=batch_size, shuffle=True
+            )
+            test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
         return train_dataloader, test_dataloader
     
