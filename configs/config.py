@@ -24,6 +24,9 @@ class Config:
         self.num_samples = np.array(self.config_dict['num_samples'])
         #print(self.p_arr)
 
+        # debugging config
+        self.train_debug = self.config_dict['train_debug']
+
         # String run_name for wandb / logfiles
         self.run_name = (
             f"Manager.{config_dict['learning_manager']}_"
@@ -34,6 +37,7 @@ class Config:
         if "random_seed" in config_dict:
             print("Seed given in config, setting deterministic run")
             random_seed = config_dict["random_seed"]
+            self.random_seed = random_seed
 
             # Set run to be deterministic
             torch.manual_seed(random_seed)

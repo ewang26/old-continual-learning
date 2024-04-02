@@ -44,6 +44,7 @@ class RandomMemorySetManager(MemorySetManager):
         memory_set_indices = torch.randperm(x.shape[0], generator=self.generator)[
             :memory_set_size
         ]
+        #print(memory_set_indices)
         memory_x = x[memory_set_indices]
         memory_y = y[memory_set_indices]
 
