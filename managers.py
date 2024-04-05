@@ -16,6 +16,7 @@ from tqdm import tqdm
 import wandb
 from matplotlib import pyplot as plt
 from torch.nn.utils import clip_grad_norm_
+import os
 
 from data import MemorySetManager
 from models import MLP, MNLIST_MLP_ARCH, CifarNet, CIFAR10_ARCH, CIFAR100_ARCH
@@ -311,6 +312,14 @@ class ContinualLearningManager(ABC):
         optimizer = Adam(self.model.parameters(), lr=lr)
 
         self.model.train()
+
+        # save gradients and model at beginning of task
+        if model_save_path is not None: 
+            grad_save_path = f'{model_save_path}/start_grad'
+            if not os.path.exists(grad_save_path): os.mkdir(grad_save_path)
+            torch.save(self.model, f"{grad_save_path}/model.pt") # save model params at start
+            self.compute_gradients_at_ideal(self.model, grad_save_path = grad_save_path, p = p)
+
         callbacks = {'loss': []}
         for _ in tqdm(range(epochs)):
             total_loss = 0
@@ -364,11 +373,17 @@ class ContinualLearningManager(ABC):
         
                 input()
 
-        self.compute_gradients_at_ideal(self.model, grad_save_path = model_save_path, p = p)
+        # save gradients and model at end of task
+        if model_save_path is not None: 
+            grad_save_path = f'{model_save_path}/end_grad'
+            if not os.path.exists(grad_save_path): os.mkdir(grad_save_path)
+            torch.save(self.model, f"{grad_save_path}/model.pt") # save model params at start
+            self.compute_gradients_at_ideal(self.model, grad_save_path = grad_save_path, p = p)
 
+        # save training loss
         if model_save_path is not None:
             # For now as models are small just saving entire things
-            torch.save(self.model, f"{model_save_path}/model.pt")
+            #torch.save(self.model, f"{model_save_path}/model.pt")
             # for name, p in self.model.named_parameters():
             #     #print(p.grad.clone().detach().cpu().numpy())
             #     np.save(f'{model_save_path}/grad_{name}', p.grad.clone().detach().cpu().numpy())
