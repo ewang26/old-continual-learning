@@ -85,34 +85,36 @@ def main(config: Config):
 
             for task_num in range(num_tasks):
                 if model_load_dir is not None:
+                    for grad_loc in ['start', 'end']: # eval grad at both start and end of task
                     # Load model and run evaluation
-                    post_train_model_load_path = (
-                        f'{model_load_dir}/1/train/task_{task_num}/model.pt'
-                    )
-                    post_train_model = torch.load(post_train_model_load_path)
-                    # Can get pre training model 
-                    ### Eventually, we want to put gradients, training loss in evaluate task as well
-                    ## So, we also want the accuracy on the memory set eval on ideal model
-                    ## current evaluate_task uses test dataloader, so we use train dataloader here as a hack
-                    acc, backward_transfer = manager.evaluate_task(model=post_train_model,
-                                                                   test_dataloader = manager._get_task_dataloaders(use_memory_set = config.use_memory_set, 
-                                                                                                                   batch_size = 64)[0])
+                        post_train_model_load_path = (
+                            f'{model_load_dir}/1/train/task_{task_num}/{grad_loc}_grad/model.pt'
+                        )
+                        post_train_model = torch.load(post_train_model_load_path)
+                        # Can get pre training model 
+                        ### Eventually, we want to put gradients, training loss in evaluate task as well
+                        ## So, we also want the accuracy on the memory set eval on ideal model
+                        ## current evaluate_task uses test dataloader, so we use train dataloader here as a hack
+                        acc, backward_transfer = manager.evaluate_task(model=post_train_model,
+                                                                    test_dataloader = manager._get_task_dataloaders(use_memory_set = config.use_memory_set, 
+                                                                                                                    batch_size = 64)[0])
 
 
-                    # save gradients w.r.t ideal weights
-                    p_save_path = f"{model_load_dir}/{p}" # save path for 0.x of memory set
-                    if not os.path.exists(p_save_path): os.mkdir(p_save_path)
-                    run_save_path = f"{p_save_path}/run_{sample_num}" # save path for a specific run
-                    if not os.path.exists(run_save_path): os.mkdir(run_save_path)
-                    grad_save_path = f"{run_save_path}/ideal_grad_task_{task_num}"
-                    if not os.path.exists(grad_save_path):
-                        os.mkdir(grad_save_path)
-                    
-                    # save gradients function
-                    manager.compute_gradients_at_ideal(
-                        model = post_train_model,
-                        grad_save_path = grad_save_path,
-                        p = p)
+                        # save gradients w.r.t ideal weights
+                        p_save_path = f"{model_load_dir}/{p}" # save path for 0.x of memory set
+                        if not os.path.exists(p_save_path): os.mkdir(p_save_path)
+                        run_save_path = f"{p_save_path}/run_{sample_num}" # save path for a specific run
+                        if not os.path.exists(run_save_path): os.mkdir(run_save_path)
+                        grad_save_path = f"{run_save_path}/ideal_grad_task_{task_num}"
+                        if not os.path.exists(grad_save_path): os.mkdir(grad_save_path)
+                        loc_save_path = f"{grad_save_path}/{grad_loc}_grad"
+                        if not os.path.exists(loc_save_path): os.mkdir(loc_save_path)
+                        
+                        # save gradients function
+                        manager.compute_gradients_at_ideal(
+                            model = post_train_model,
+                            grad_save_path = loc_save_path,
+                            p = p)
                 else:
                     # right now, training is only implemented for 1 sample per p
                     assert num_samples == 1
