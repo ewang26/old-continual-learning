@@ -22,6 +22,7 @@ class Config:
         # for batch training and evaluation
         self.p_arr = np.array(self.config_dict['p_arr'])
         self.num_samples = np.array(self.config_dict['num_samples'])
+        self.memory_selection_method = self.config_dict['memory_set_manager']
         #print(self.p_arr)
 
         # debugging config

@@ -88,7 +88,7 @@ def main(config: Config):
                     for grad_loc in ['start', 'end']: # eval grad at both start and end of task
                     # Load model and run evaluation
                         post_train_model_load_path = (
-                            f'{model_load_dir}/1/train/task_{task_num}/{grad_loc}_grad/model.pt'
+                            f'{model_load_dir}/ideal_model/task_{task_num}/{grad_loc}_grad/model.pt'
                         )
                         post_train_model = torch.load(post_train_model_load_path)
                         # Can get pre training model 
@@ -101,7 +101,9 @@ def main(config: Config):
 
 
                         # save gradients w.r.t ideal weights
-                        p_save_path = f"{model_load_dir}/{p}" # save path for 0.x of memory set
+                        mem_sel_path = f"{model_load_dir}/{config.memory_selection_method}"
+                        if not os.path.exists(mem_sel_path): os.mkdir(mem_sel_path)
+                        p_save_path = f"{mem_sel_path}/{p}" # save path for 0.x of memory set
                         if not os.path.exists(p_save_path): os.mkdir(p_save_path)
                         run_save_path = f"{p_save_path}/run_{sample_num}" # save path for a specific run
                         if not os.path.exists(run_save_path): os.mkdir(run_save_path)
@@ -122,7 +124,9 @@ def main(config: Config):
                     # Train model from scratch
                     if model_save_dir is not None:
                         #create save dir
-                        model_p_save_dir = f'{model_save_dir}/{p}'
+                        mem_sel_path = f"{model_save_dir}/{config.memory_selection_method}"
+                        if not os.path.exists(mem_sel_path): os.mkdir(mem_sel_path)
+                        model_p_save_dir = f'{mem_sel_path}/{p}'
                         if not os.path.exists(model_p_save_dir): os.mkdir(model_p_save_dir)
                         # create train save dir
                         model_train_save_dir = f'{model_p_save_dir}/train'
