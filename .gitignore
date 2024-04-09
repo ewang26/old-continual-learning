@@ -5,6 +5,7 @@
 **/data/
 **/wandb/
 **/models/mnist_split_old
+**/configs
 **/model/cifar_split_old
 #**/models/
 **/artifacts/
