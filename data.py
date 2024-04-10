@@ -154,3 +154,25 @@ class KMeansMemorySetManager(MemorySetManager):
         memory_y_concat = torch.cat(list(memory_y.values()), dim=0).view(-1)
         
         return memory_x_concat, memory_y_concat
+    
+
+# JONATHAN LAMBDA METHOD
+class LambdaMemorySetManager(MemorySetManager):
+    def __init__(self, p: float, random_seed: int = 42):
+        """
+        Args:
+            p: The probability of an element being in the memory set.
+        """
+        self.p = p
+        self.generator = torch.Generator().manual_seed(random_seed)
+
+    def create_memory_set(self, x: Float[Tensor, "n f"], y: Float[Tensor, "n 1"]):
+        # need to take as inputs not only the data (x) and the labels (y), but also the gradients and model architecture
+            # perhaps make an if condition for this method in managers.py or use kwargs
+        # define T as an array with length n, where n is total number of samples
+        # for each data point:
+            # calculate r, a forward pass of the point on the network, saving the output layer classification probability for each class (before softmax)
+            # calculate R, the outer product of the Kx1 matrix r, following r @ (1-r).T
+            # calculate T[i], the trace of the matrix R, which is equivalent to the hessian of the loss wrt the output layer
+        # sort T from greatest to least and denote the memory set as the first m elements, where m = n*p. 
+        pass
