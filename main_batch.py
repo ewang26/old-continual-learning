@@ -1,4 +1,4 @@
-from data import RandomMemorySetManager
+from data import RandomMemorySetManager, KMeansMemorySetManager
 from managers import MnistManagerSplit, Cifar10ManagerSplit, Cifar100ManagerSplit
 from configs.config import Config
 from pathlib import Path
