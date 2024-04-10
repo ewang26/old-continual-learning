@@ -1,3 +1,5 @@
+#main_batch 
+
 from data import RandomMemorySetManager, KMeansMemorySetManager
 from managers import MnistManagerSplit, Cifar10ManagerSplit, Cifar100ManagerSplit
 from configs.config import Config
@@ -56,24 +58,23 @@ def main(config: Config):
 
         for sample_num in range(num_samples):
             random_seed = int(rng.integers(low=0, high=1e6))
+            # memory_set_manager = config.memory_set_manager(
+            #     p, random_seed=random_seed
+            # )
 
-            #memory_set_manager = config.memory_set_manager(
-            #    p, random_seed=random_seed
-            #)
-            #K-means additon
+            #K-MEANS Addition
             if config.memory_set_manager == RandomMemorySetManager:
                 memory_set_manager = config.memory_set_manager(p, random_seed=random_seed)
             elif config.memory_set_manager == KMeansMemorySetManager:
                 memory_set_manager = config.memory_set_manager(
                     p,
                     num_centroids=config.num_centroids,
-                    num_classes=config.num_classes,
                     device=config.device,
                     random_seed=random_seed
                 )
             else:
                 raise ValueError(f"Unsupported memory set manager: {config.memory_set_manager}")
-            #end
+            
             manager = config.learning_manager(
                 memory_set_manager=memory_set_manager,
                 use_wandb=config.use_wandb,
@@ -102,6 +103,7 @@ def main(config: Config):
                     # Load model and run evaluation
                         post_train_model_load_path = (
                             f'{model_load_dir}/ideal_model/task_{task_num}/{grad_loc}_grad/model.pt'
+                            #f'{model_load_dir}/ideal_model/{config.memory_selection_method}/1/train/task_{task_num}/{grad_loc}_grad/model.pt'
                         )
                         post_train_model = torch.load(post_train_model_load_path)
                         # Can get pre training model 
@@ -136,22 +138,18 @@ def main(config: Config):
 
                     # Train model from scratch
                     if model_save_dir is not None:
-
-                        if p == 1:
-                            model_save_path = f"{model_save_dir}/ideal_model"
-                        else: 
-                            #create save dir
-                            mem_sel_path = f"{model_save_dir}/{config.memory_selection_method}"
-                            if not os.path.exists(mem_sel_path): os.mkdir(mem_sel_path)
-                            model_p_save_dir = f'{mem_sel_path}/{p}'
-                            if not os.path.exists(model_p_save_dir): os.mkdir(model_p_save_dir)
-                            # create train save dir
-                            model_train_save_dir = f'{model_p_save_dir}/train'
-                            if not os.path.exists(model_train_save_dir): os.mkdir(model_train_save_dir)
-                            #create task specific save dir
-                            model_save_path = f"{model_train_save_dir}/task_{task_num}"
-                            if not os.path.exists(model_save_path):
-                                os.mkdir(model_save_path)
+                        #create save dir
+                        mem_sel_path = f"{model_save_dir}/{config.memory_selection_method}"
+                        if not os.path.exists(mem_sel_path): os.mkdir(mem_sel_path)
+                        model_p_save_dir = f'{mem_sel_path}/{p}'
+                        if not os.path.exists(model_p_save_dir): os.mkdir(model_p_save_dir)
+                        # create train save dir
+                        model_train_save_dir = f'{model_p_save_dir}/train'
+                        if not os.path.exists(model_train_save_dir): os.mkdir(model_train_save_dir)
+                        #create task specific save dir
+                        model_save_path = f"{model_train_save_dir}/task_{task_num}"
+                        if not os.path.exists(model_save_path):
+                            os.mkdir(model_save_path)
                     else:
                         model_save_path = None
 

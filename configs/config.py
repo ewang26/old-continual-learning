@@ -1,5 +1,5 @@
 from typing import Dict, Union
-from data import RandomMemorySetManager
+from data import RandomMemorySetManager, KMeansMemorySetManager
 from managers import (
     MnistManagerSplit,
     Cifar10ManagerSplit,
@@ -24,6 +24,11 @@ class Config:
         self.num_samples = np.array(self.config_dict['num_samples'])
         self.memory_selection_method = self.config_dict['memory_set_manager']
         #print(self.p_arr)
+        
+        #k-means addtions
+        self.num_centroids = config_dict.get('num_centroids', 10)  # Default value is 10
+        self.num_classes = config_dict.get('num_classes', 10)     # Default value is 10
+        self.device = torch.device(config_dict.get('device', 'cpu'))  # Default value is 'cpu'        
 
         # debugging config
         self.train_debug = self.config_dict['train_debug']
@@ -52,6 +57,8 @@ class Config:
             if key == "memory_set_manager":
                 if val == "random":
                     setattr(self, key, RandomMemorySetManager)
+                elif val == "kmeans":
+                    setattr(self, key, KMeansMemorySetManager)
                 else:
                     raise ValueError(
                         f"{val} memory set manager is not valid"
