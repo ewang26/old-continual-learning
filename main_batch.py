@@ -136,18 +136,22 @@ def main(config: Config):
 
                     # Train model from scratch
                     if model_save_dir is not None:
-                        #create save dir
-                        mem_sel_path = f"{model_save_dir}/{config.memory_selection_method}"
-                        if not os.path.exists(mem_sel_path): os.mkdir(mem_sel_path)
-                        model_p_save_dir = f'{mem_sel_path}/{p}'
-                        if not os.path.exists(model_p_save_dir): os.mkdir(model_p_save_dir)
-                        # create train save dir
-                        model_train_save_dir = f'{model_p_save_dir}/train'
-                        if not os.path.exists(model_train_save_dir): os.mkdir(model_train_save_dir)
-                        #create task specific save dir
-                        model_save_path = f"{model_train_save_dir}/task_{task_num}"
-                        if not os.path.exists(model_save_path):
-                            os.mkdir(model_save_path)
+
+                        if p == 1:
+                            model_save_path = f"{model_save_dir}/ideal_model"
+                        else: 
+                            #create save dir
+                            mem_sel_path = f"{model_save_dir}/{config.memory_selection_method}"
+                            if not os.path.exists(mem_sel_path): os.mkdir(mem_sel_path)
+                            model_p_save_dir = f'{mem_sel_path}/{p}'
+                            if not os.path.exists(model_p_save_dir): os.mkdir(model_p_save_dir)
+                            # create train save dir
+                            model_train_save_dir = f'{model_p_save_dir}/train'
+                            if not os.path.exists(model_train_save_dir): os.mkdir(model_train_save_dir)
+                            #create task specific save dir
+                            model_save_path = f"{model_train_save_dir}/task_{task_num}"
+                            if not os.path.exists(model_save_path):
+                                os.mkdir(model_save_path)
                     else:
                         model_save_path = None
 
