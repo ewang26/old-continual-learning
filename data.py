@@ -72,29 +72,6 @@ class KMeansMemorySetManager(MemorySetManager):
         # Set the random seed for reproducibility
         torch.manual_seed(self.random_seed)
         
-        # Initialize centroids and cluster counters
-        self.centroids = None
-        self.cluster_counters = None
-
-class KMeansMemorySetManager(MemorySetManager):
-    def __init__(self, p: float, num_centroids: int, num_classes: int, device: torch.device, random_seed: int = 42):
-        """
-        Args:
-            p: The percentage of samples to retain in the memory set.
-            num_centroids: The number of centroids to use for K-Means clustering.
-            num_classes: The number of classes in the dataset.
-            device: The device to use for computations (e.g., torch.device("cuda")).
-            random_seed: The random seed for reproducibility.
-        """
-        self.p = p
-        self.num_centroids = num_centroids
-        self.num_classes = num_classes
-        self.device = device
-        self.random_seed = random_seed
-        
-        # Set the random seed for reproducibility
-        torch.manual_seed(self.random_seed)
-        
     def create_memory_set(self, x: Float[Tensor, "n f"], y: Float[Tensor, "n 1"]) -> Tuple[Float[Tensor, "m f"], Float[Tensor, "m 1"]]:
         """Creates memory set using K-Means clustering.
         
