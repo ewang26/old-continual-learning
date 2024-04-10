@@ -57,10 +57,23 @@ def main(config: Config):
         for sample_num in range(num_samples):
             random_seed = int(rng.integers(low=0, high=1e6))
 
-            memory_set_manager = config.memory_set_manager(
-                p, random_seed=random_seed
-            )
-
+            #memory_set_manager = config.memory_set_manager(
+            #    p, random_seed=random_seed
+            #)
+            #K-means additon
+            if config.memory_set_manager == RandomMemorySetManager:
+                memory_set_manager = config.memory_set_manager(p, random_seed=random_seed)
+            elif config.memory_set_manager == KMeansMemorySetManager:
+                memory_set_manager = config.memory_set_manager(
+                    p,
+                    num_centroids=config.num_centroids,
+                    num_classes=config.num_classes,
+                    device=config.device,
+                    random_seed=random_seed
+                )
+            else:
+                raise ValueError(f"Unsupported memory set manager: {config.memory_set_manager}")
+            #end
             manager = config.learning_manager(
                 memory_set_manager=memory_set_manager,
                 use_wandb=config.use_wandb,
