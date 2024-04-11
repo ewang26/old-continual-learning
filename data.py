@@ -11,6 +11,8 @@ from torch.utils.data import random_split
 from torch.utils.data.dataset import Dataset as TorchDataset
 from sklearn.cluster import KMeans
 
+import numpy as np
+
 
 class MemorySetManager(ABC):
     @abstractmethod
@@ -176,3 +178,91 @@ class LambdaMemorySetManager(MemorySetManager):
             # calculate T[i], the trace of the matrix R, which is equivalent to the hessian of the loss wrt the output layer
         # sort T from greatest to least and denote the memory set as the first m elements, where m = n*p. 
         pass
+
+
+# Alan Gradient Sample Selection (GSS)
+class GSSMemorySetManager(MemorySetManager):
+    def __init__(self, p: float, random_seed: int = 42):
+        """
+        Args:
+            p: fraction of task dataset to be included in replay buffer.
+        """
+        self.p = p
+        self.generator = torch.Generator().manual_seed(random_seed)
+        self.gss_p = 0.1
+
+    def create_memory_set(
+        self, x: Float[Tensor, "n f"], y: Float[Tensor, "n"]
+    ) -> Tuple[Float[Tensor, "m f"], Float[Tensor, "m"]]:
+        """Initializes an empty memory replay buffer if training, called when task objects are created
+        Else, use ideal model to generate GSS memory set
+
+        Args:
+            x: x data.
+            y: y data.
+        Return:
+            (x_mem, y_mem) tuple.
+        """
+        
+        #start out memory buffer with p*task_data_length
+        self.memory_set_size = int(x.shape[0] * self.p)
+        self.memory_set_inc = self.memory_set_size
+        # # Select memeory set random elements from x and y, without replacement
+        # memory_set_indices = torch.randperm(x.shape[0], generator=self.generator)[
+        #     :self.memory_set_size
+        # ]
+        # #print(memory_set_indices)
+        # memory_x = x[memory_set_indices]
+        # memory_y = y[memory_set_indices]
+
+        # return memory_x, memory_y
+        return torch.empty(0), torch.empty(0)
+    
+    def update_GSS_greedy(self, memory_x, memory_y, C_arr, sample_x, sample_y, grad_sample, grad_batch):
+        '''
+        TODO implement alg 2 in paper here
+        memory_x,y = current memory set for the task (to be used in later tasks)
+        C_arr = current list of corresponding scores of each element in memory set
+        sample_x,y = new sample
+        grad_sample = gradient of new sample
+        grad_batch = gradent of random batch of memory_x,y
+        '''
+        
+        # first case, if we dont reach maximum size of memory set, just add it
+        # if memory_x.shape[0] + 1 >= self.memory_set_size:
+        #     print('in gss greedy')
+        #     print(memory_x.shape)
+        #     print(memory_y.shape)
+        #     print(C_arr.shape)
+
+        sample_norm, batch_norm = np.linalg.norm(grad_sample), np.linalg.norm(grad_batch)
+        if self.memory_set_size == 0:
+            c = 0
+        else:
+            c = np.dot(grad_sample, grad_batch) / (sample_norm*batch_norm) + 1 if not (sample_norm*batch_norm == 0) else 1 # else dont add it
+
+        if (memory_x.shape[0] < self.memory_set_size):
+            memory_x = torch.cat((memory_x, sample_x), 0)
+            memory_y = torch.cat((memory_y, sample_y), 0)
+            C_arr = np.concatenate((C_arr, np.array([c])), 0)
+        else:
+            if c < 1:
+                P = C_arr / np.sum(C_arr)
+                i = np.random.choice(np.arange(self.memory_set_size), p = P)
+                r = np.random.rand()
+                if r < C_arr[i] / (C_arr[i] + c):
+                    memory_x[i] = sample_x
+                    memory_y[i] = sample_y
+                    C_arr[i] = c
+                #     print('replaced!')
+                # else:
+                #     print('no replace!')
+
+        # if memory_x.shape[0] + 1 >= self.memory_set_size:
+        #     print('after update')
+        #     print(memory_x.shape)
+        #     print(memory_y.shape)
+        #     print(C_arr)
+        #     input()
+        
+        return memory_x, memory_y.long(), C_arr

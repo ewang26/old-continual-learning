@@ -1,6 +1,6 @@
 #main_batch 
 
-from data import RandomMemorySetManager, KMeansMemorySetManager
+from data import RandomMemorySetManager, KMeansMemorySetManager, GSSMemorySetManager
 from managers import MnistManagerSplit, Cifar10ManagerSplit, Cifar100ManagerSplit
 from configs.config import Config
 from pathlib import Path
@@ -62,6 +62,16 @@ def main(config: Config):
             #     p, random_seed=random_seed
             # )
 
+            # initialize load or save directory
+            model_save_dir = getattr(config, "model_save_dir", None)
+            if (model_save_dir is not None) and (not os.path.exists(model_save_dir)):
+                os.mkdir(model_save_dir)
+            #model_save_dir = f'{model_save_dir}/{p}/'
+            model_load_dir = getattr(config, "model_load_dir", None)
+            if model_load_dir is not None:
+                print("Model load path given so loading model and not training")
+                print("If this is unintended behaviour, remove model_load_dir from config")
+
             #K-MEANS Addition
             if config.memory_set_manager == RandomMemorySetManager:
                 memory_set_manager = config.memory_set_manager(p, random_seed=random_seed)
@@ -72,6 +82,10 @@ def main(config: Config):
                     device=config.device,
                     random_seed=random_seed
                 )
+            elif config.memory_set_manager == GSSMemorySetManager:
+                memory_set_manager = config.memory_set_manager(
+                    p, 
+                    random_seed=random_seed)
             else:
                 raise ValueError(f"Unsupported memory set manager: {config.memory_set_manager}")
             
@@ -88,16 +102,8 @@ def main(config: Config):
             final_accs = []
             final_backward_transfers = []
 
-            model_save_dir = getattr(config, "model_save_dir", None)
-            if (model_save_dir is not None) and (not os.path.exists(model_save_dir)):
-                os.mkdir(model_save_dir)
-            #model_save_dir = f'{model_save_dir}/{p}/'
-            model_load_dir = getattr(config, "model_load_dir", None)
-            if model_load_dir is not None:
-                print("Model load path given so loading model and not training")
-                print("If this is unintended behaviour, remove model_load_dir from config")
-
             for task_num in range(num_tasks):
+                
                 if model_load_dir is not None:
                     for grad_loc in ['start', 'end']: # eval grad at both start and end of task
                     # Load model and run evaluation
@@ -107,14 +113,7 @@ def main(config: Config):
                         )
                         post_train_model = torch.load(post_train_model_load_path)
                         # Can get pre training model 
-                        ### Eventually, we want to put gradients, training loss in evaluate task as well
-                        ## So, we also want the accuracy on the memory set eval on ideal model
-                        ## current evaluate_task uses test dataloader, so we use train dataloader here as a hack
-                        acc, backward_transfer = manager.evaluate_task(model=post_train_model,
-                                                                    test_dataloader = manager._get_task_dataloaders(use_memory_set = config.use_memory_set, 
-                                                                                                                    batch_size = 64)[0])
-
-
+                        
                         # save gradients w.r.t ideal weights
                         mem_sel_path = f"{model_load_dir}/{config.memory_selection_method}"
                         if not os.path.exists(mem_sel_path): os.mkdir(mem_sel_path)
@@ -132,6 +131,13 @@ def main(config: Config):
                             model = post_train_model,
                             grad_save_path = loc_save_path,
                             p = p)
+                        
+                        ### Eventually, we want to put gradients, training loss in evaluate task as well
+                        ## So, we also want the accuracy on the memory set eval on ideal model
+                        ## current evaluate_task uses test dataloader, so we use train dataloader here as a hack
+                        acc, backward_transfer = manager.evaluate_task(model=post_train_model,
+                                                                    test_dataloader = manager._get_task_dataloaders(use_memory_set = config.use_memory_set, 
+                                                                                                                    batch_size = 64)[0])
                 else:
                     # right now, training is only implemented for 1 sample per p
                     assert num_samples == 1

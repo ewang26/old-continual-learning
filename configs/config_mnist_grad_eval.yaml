@@ -5,7 +5,7 @@ wandb_profile: alanhsu
 
 
 # Memory set hyperparameters
-memory_set_manager: random
+memory_set_manager: GSS
 use_memory_set: True
 p: dummar_var
 #num_samples: 10
@@ -15,8 +15,8 @@ p: dummar_var
 #num_samples: [10, 10, 10, 10, 10, 10, 10, 10, 10, 10]
 #num_samples: [1, 1, 1, 1, 1, 1, 1, 1, 1]
 
-p_arr: [0.001, 0.002]
-num_samples: [1, 1] 
+p_arr: [0.01]
+num_samples: [1] 
 
 #debugging 
 train_debug: False
