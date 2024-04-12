@@ -1,6 +1,6 @@
 #main_batch 
 
-from data import RandomMemorySetManager, KMeansMemorySetManager
+from data import RandomMemorySetManager, KMeansMemorySetManager, LambdaMemorySetManager
 from managers import MnistManagerSplit, Cifar10ManagerSplit, Cifar100ManagerSplit
 from configs.config import Config
 from pathlib import Path
@@ -47,6 +47,7 @@ def main(config: Config):
     if config.use_wandb:
         setup_wandb(config)
     
+    # random number generator allows mth sample to always yield the same value, but mth sample is different than nth sample
     rng = np.random.default_rng(seed = config.random_seed)
 
     # loop through all p-values that we list
@@ -58,11 +59,8 @@ def main(config: Config):
 
         for sample_num in range(num_samples):
             random_seed = int(rng.integers(low=0, high=1e6))
-            # memory_set_manager = config.memory_set_manager(
-            #     p, random_seed=random_seed
-            # )
 
-            #K-MEANS Addition
+            # accounting for various memory set methods
             if config.memory_set_manager == RandomMemorySetManager:
                 memory_set_manager = config.memory_set_manager(p, random_seed=random_seed)
             elif config.memory_set_manager == KMeansMemorySetManager:
@@ -72,6 +70,8 @@ def main(config: Config):
                     device=config.device,
                     random_seed=random_seed
                 )
+            elif config.memory_set_manager == LambdaMemorySetManager:
+                memory_set_manager = config.memory_set_manager(p) # more parameters to come soon
             else:
                 raise ValueError(f"Unsupported memory set manager: {config.memory_set_manager}")
             

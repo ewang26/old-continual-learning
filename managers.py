@@ -208,8 +208,8 @@ class ContinualLearningManager(ABC):
         grad_save_path: Optional[Path] = None,
         p: float = 1
     ):
-        """Given an ideal model, loop through different p, and evaluate gradients at each end task parameters 
-        
+        """
+        Given an ideal model, loop through different p, and evaluate gradients at each end task parameters 
         """
 
         # load data and labels

@@ -174,5 +174,6 @@ class LambdaMemorySetManager(MemorySetManager):
             # calculate r, a forward pass of the point on the network, saving the output layer classification probability for each class (before softmax)
             # calculate R, the outer product of the Kx1 matrix r, following r @ (1-r).T
             # calculate T[i], the trace of the matrix R, which is equivalent to the hessian of the loss wrt the output layer
-        # sort T from greatest to least and denote the memory set as the first m elements, where m = n*p. 
+        # sort T from greatest to least and denote the memory set as the first m elements, where m = n*p.
+        # return this memory set.
         pass
