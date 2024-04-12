@@ -202,6 +202,29 @@ class ContinualLearningManager(ABC):
 
         return test_acc, backward_transfer
     
+    def get_forward_pass_gradients(self, X, y, model, criterion, current_labels):
+        '''
+        model should be on DEVICE
+        X, y should be tensor batches
+        '''
+
+        X = X.to(DEVICE)
+        y = y.to(DEVICE)
+
+        outputs = model(X)
+
+        # Only select outputs for current labels
+        outputs_splice = outputs[:, current_labels]
+        #print(outputs_splice.type(), y.type())
+        loss = criterion(outputs_splice, y)
+        loss.backward()
+
+        grad_list = []
+        for name, p in model.named_parameters():
+            grad_list.append(p.grad.clone().detach().cpu().numpy().flatten())
+        
+        return np.concatenate(grad_list)
+    
     def compute_gradients_at_ideal(
         self,
         model: Optional[nn.Module] = None,
@@ -229,7 +252,7 @@ class ContinualLearningManager(ABC):
         model.to(DEVICE)
         criterion = nn.CrossEntropyLoss(label_weights)
 
-        # loop through batches
+        # loop through batches; should only be 1 batch right now
         for batch_x, batch_y in train_dataloader:
 
             # i think we need to zero gradients here as well? not sure if param grad also accumulates without optimizer
@@ -243,6 +266,7 @@ class ContinualLearningManager(ABC):
 
             # Only select outputs for current labels
             outputs_splice = outputs[:, current_labels]
+            #print(outputs_splice.type(), batch_y.type())
             loss = criterion(outputs_splice, batch_y)
             loss.backward()
 
@@ -262,6 +286,53 @@ class ContinualLearningManager(ABC):
             for name, p in model.named_parameters():
                 #print(p.grad.clone().detach().cpu().numpy())
                 np.save(f'{grad_save_path}/grad_{name}', p.grad.clone().detach().cpu().numpy())
+
+        # now, we should also update the memory set of the current task for use in next task
+        if self.memory_set_manager.__class__.__name__ in ['GSSMemorySetManager']:
+            
+            # get a 1-batch dataloader
+            terminal_train_dataloader = self._get_terminal_task_dataloader()
+            #print(valid_labels)
+
+            # reset criterion just in case
+            criterion = nn.CrossEntropyLoss(label_weights)
+
+            # now we go through samples 1 by 1
+            for batch_x, batch_y in terminal_train_dataloader:
+                    
+                # need to do GSS update
+                # zero param gradients just in case
+                for param in model.parameters():
+                    param.grad = None
+
+                #print(batch_x.shape, batch_y.shape)
+                #print(batch_y[0] in valid_labels)
+                #print(5 in valid_labels)
+                #assert False
+
+                grad_sample = self.get_forward_pass_gradients(batch_x, batch_y, model, criterion, current_labels)
+
+                
+                #need grad_batch, or forward pass of sample from memory set
+
+                # zero param gradients again
+                for param in model.parameters():
+                    param.grad = None
+
+                # create subset dataset from updated memory set
+                mem_set_len = len(self.tasks[self.task_index].memory_x)
+                #print(mem_set_len)
+                n = np.floor(self.tasks[self.task_index].memory_set_manager.gss_p*mem_set_len).astype(np.uint32)+1
+                #print(n)
+                indices = torch.randperm(mem_set_len)[:n]
+                mem_sample_x, mem_sample_y = self.tasks[self.task_index].memory_x[indices], self.tasks[self.task_index].memory_y[indices].long()
+                #print(mem_sample_x.shape, mem_sample_y.shape)
+                # forward pass subset, compute gradient
+                grad_batch = self.get_forward_pass_gradients(mem_sample_x, mem_sample_y, model, criterion, current_labels) if not (mem_set_len == 0) else np.zeros_like(grad_sample)
+                #print(grad_batch)
+                
+                #assert(False)
+                self.tasks[self.task_index].update_memory_set(batch_x, batch_y, grad_sample, grad_batch)
 
 
         return None
@@ -361,6 +432,15 @@ class ContinualLearningManager(ABC):
                             f"grad_norm_task_idx_{self.task_index}": l2_sum,
                         }
                     )
+
+                # for the current batch, pass every item through GSS
+                '''
+                TODO loop through current batch, for each sample get grad of sample + grad of random subset of memory set
+                pass values to update memory set of CURRENT task (to be used in later tasks)
+                '''
+                grad_sample = 0
+                grad_batch = 0
+                self.tasks[self.task_index].update_memory_set(grad_sample, grad_batch)
 
             callbacks['loss'].append(total_loss)
 
@@ -593,6 +673,44 @@ class ContinualLearningManager(ABC):
 
         return train_dataloader, test_dataloader
     
+    def _get_terminal_task_dataloader(self, batch_size: int = 1) -> Tuple[DataLoader, DataLoader]:
+        """Collect the datasets of all tasks < task_index and return it as a dataloader.
+
+        Args:
+            use_memory_set: Whether to use the memory set for tasks < task_index.
+            batch_size: Batch size to use for training.
+        Returns:
+            Tuple of train dataloader then test dataloader.
+        """
+
+        # Get terminal task
+        terminal_task = self.tasks[self.task_index]
+
+        # Create a dataset for all tasks < task_index
+        terminal_x_attr = "train_x"
+        terminal_y_attr = "train_y"
+
+        combined_train_x = torch.cat(
+            [getattr(terminal_task, terminal_x_attr)]
+        )
+        combined_train_y = torch.cat(
+            [getattr(terminal_task, terminal_y_attr)]
+        )
+
+        # Randomize the train dataset
+        n = combined_train_x.shape[0]
+        perm = torch.randperm(n)
+        combined_train_x = combined_train_x[perm]
+        combined_train_y = combined_train_y[perm]
+
+        # Put into batches
+        train_dataset = TensorDataset(combined_train_x, combined_train_y)
+        train_dataloader = DataLoader(
+            train_dataset, batch_size=batch_size, shuffle=True
+        )
+
+        return train_dataloader
+    
     def _get_task_dataloaders_new_loss(
         self, use_memory_set: bool, batch_size: int
     ) -> Tuple[DataLoader, DataLoader]:
@@ -719,6 +837,10 @@ class ContinualLearningManager(ABC):
         if self.task_index >= len(self.tasks):
             raise IndexError("No more tasks")
         self.tasks[self.task_index].active = True
+
+        # update memory set buffer size
+        if self.tasks[self.task_index].memory_set_manager.__class__.__name__ in ['GSSMemorySetManager']:
+            self.tasks[self.task_index].memory_set_manager.memory_set_size += self.tasks[self.task_index].memory_set_manager.memory_set_inc
 
     def _get_current_labels(self):
         running_tasks = self.tasks[: self.task_index + 1]

@@ -1,5 +1,5 @@
 from typing import Dict, Union
-from data import RandomMemorySetManager, KMeansMemorySetManager
+from data import RandomMemorySetManager, KMeansMemorySetManager, GSSMemorySetManager
 from managers import (
     MnistManagerSplit,
     Cifar10ManagerSplit,
@@ -59,6 +59,8 @@ class Config:
                     setattr(self, key, RandomMemorySetManager)
                 elif val == "kmeans":
                     setattr(self, key, KMeansMemorySetManager)
+                elif val == "GSS":
+                    setattr(self, key, GSSMemorySetManager)
                 else:
                     raise ValueError(
                         f"{val} memory set manager is not valid"
