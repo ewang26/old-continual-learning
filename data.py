@@ -180,7 +180,7 @@ class LambdaMemorySetManager(MemorySetManager):
             memory_x and memory_y: the existing memory datasets.
             sample_x and sample_y: the full data from the terminal task.
             outputs: tensor of size [n x k] where n is number of samples in sample_x or sample_y, and k is number of classes to classify into.
-                Forward pass through the network of all data in sample_x.
+                Outputs of forward pass through the network of all data in sample_x.
         
         Returns:
             memory_x and memory_y.long(): new memory datasets including the memory dataset for the existing task.
@@ -190,8 +190,10 @@ class LambdaMemorySetManager(MemorySetManager):
         for i in range(terminal_task_size):
             # take output layer and apply softmax to get probabilities of classification for each output
             class_p = torch.softmax(outputs[i], dim=0)
+
             # create a matrix of p @ (1-p).T to represent decision uncertainty at each class
             decision_uncertainty = torch.ger(class_p, (1 - class_p).T)
+
             # calculate the trace of this matrix to assess the uncertainty in classification across multiple classes
             # the trace equivalent to the hessian of the loss wrt the output layer
             decision_trace = torch.trace(decision_uncertainty)
@@ -201,6 +203,7 @@ class LambdaMemorySetManager(MemorySetManager):
         # NOTE: this does class balancing if data in the tasks are already balanced
             # more work must be done to create constant memory size for each class regardless of initial class distribution in task space
         memory_size = int(terminal_task_size*self.p)
+
         # getting indexes of the highest trace 
         argsorted_indx = sorted(range(len(trace_list)), key=lambda x: trace_list[x], reverse=True)
         desired_indx = argsorted_indx[:memory_size]
