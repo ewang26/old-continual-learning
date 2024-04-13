@@ -65,3 +65,6 @@ class Task:
                 sample_y,
                 grad_sample, 
                 grad_batch) #update buffer + scores
+            
+        else:
+            raise NotImplementedError("Only Lambda and GSS Memory Selection methods update memory set in runtime.")
