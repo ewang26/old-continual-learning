@@ -1,5 +1,5 @@
 from typing import Dict, Union
-from data import RandomMemorySetManager, KMeansMemorySetManager, GSSMemorySetManager
+from data import RandomMemorySetManager, KMeansMemorySetManager, LambdaMemorySetManager, GSSMemorySetManager
 from managers import (
     MnistManagerSplit,
     Cifar10ManagerSplit,
@@ -59,6 +59,8 @@ class Config:
                     setattr(self, key, RandomMemorySetManager)
                 elif val == "kmeans":
                     setattr(self, key, KMeansMemorySetManager)
+                elif val == "lambda" or val == "Lambda":
+                    setattr(self, key, LambdaMemorySetManager)
                 elif val == "GSS":
                     setattr(self, key, GSSMemorySetManager)
                 else:

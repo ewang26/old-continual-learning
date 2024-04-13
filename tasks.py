@@ -47,13 +47,21 @@ class Task:
             self.memory_set_manager = memory_set_manager # save the manager for future use
             self.C_arr = np.array([]) # initialize score array for memory set
 
-    def update_memory_set(self, sample_x, sample_y, grad_sample, grad_batch):
-        assert self.memory_set_manager.__class__.__name__ == 'GSSMemorySetManager'
-        self.memory_x, self.memory_y, self.C_arr = self.memory_set_manager.update_GSS_greedy(
-            self.memory_x, 
-            self.memory_y, 
-            self.C_arr, 
-            sample_x,
-            sample_y,
-            grad_sample, 
-            grad_batch) #update buffer + scores
+        if memory_set_manager.__class__.__name__ == 'LambdaMemorySetManager':
+            self.memory_set_manager = memory_set_manager
+
+    def update_memory_set(self, sample_x, sample_y, outputs=None, grad_sample=None, grad_batch=None):
+        if self.memory_set_manager.__class__.__name__ == 'LambdaMemorySetManager':
+            self.memory_x, self.memory_y = self.memory_set_manager.update_memory_lambda(
+                self.memory_x, self.memory_y, sample_x, sample_y, outputs
+            )
+
+        if self.memory_set_manager.__class__.__name__ == 'GSSMemorySetManager':
+            self.memory_x, self.memory_y, self.C_arr = self.memory_set_manager.update_GSS_greedy(
+                self.memory_x, 
+                self.memory_y, 
+                self.C_arr, 
+                sample_x,
+                sample_y,
+                grad_sample, 
+                grad_batch) #update buffer + scores

@@ -287,6 +287,23 @@ class ContinualLearningManager(ABC):
                 #print(p.grad.clone().detach().cpu().numpy())
                 np.save(f'{grad_save_path}/grad_{name}', p.grad.clone().detach().cpu().numpy())
 
+        if self.memory_set_manager.__class__.__name__ == 'LambdaMemorySetManager':
+            # assume we update for all the data
+            # take the entire training data, run a forward pass through the network
+            # train on D0.
+            # forward pass through full D0, store M0.
+            # train on M0 and D1.
+            # forward pass of just the D1 terms, store M1.
+            # using getting all the training data at once
+            terminal_train_dataloader = self._get_terminal_task_dataloader(full_batch=True)
+            criterion = nn.CrossEntropyLoss(label_weights)   # is this necessary?
+            for batch_x, batch_y in terminal_train_dataloader:
+                for param in model.parameters():
+                    param.grad = None
+                outputs = model(batch_x)
+                self.tasks[self.task_index].update_memory_set(batch_x, batch_y, outputs)
+
+
         # now, we should also update the memory set of the current task for use in next task
         if self.memory_set_manager.__class__.__name__ in ['GSSMemorySetManager']:
             
@@ -673,7 +690,7 @@ class ContinualLearningManager(ABC):
 
         return train_dataloader, test_dataloader
     
-    def _get_terminal_task_dataloader(self, batch_size: int = 1) -> Tuple[DataLoader, DataLoader]:
+    def _get_terminal_task_dataloader(self, batch: int = 1, full_batch=False) -> Tuple[DataLoader, DataLoader]:
         """Collect the datasets of all tasks < task_index and return it as a dataloader.
 
         Args:
@@ -703,7 +720,13 @@ class ContinualLearningManager(ABC):
         combined_train_x = combined_train_x[perm]
         combined_train_y = combined_train_y[perm]
 
-        # Put into batches
+        # Getting batch size
+        if full_batch:
+            batch_size = n
+        else:
+            batch_size = batch
+
+        # Put into batches and create Tensor Dataset
         train_dataset = TensorDataset(combined_train_x, combined_train_y)
         train_dataloader = DataLoader(
             train_dataset, batch_size=batch_size, shuffle=True
@@ -845,6 +868,13 @@ class ContinualLearningManager(ABC):
     def _get_current_labels(self):
         running_tasks = self.tasks[: self.task_index + 1]
         return set.union(*[task.task_labels for task in running_tasks])
+    
+    # def _get_terminal_labels(self):
+    #     """
+    #     Gets the labels for the terminal task (the task not included in memory set).
+    #     """
+    #     terminal_task = self.tasks[self.task_index]
+    #     return set(terminal_task.task_labels)
 
     
     def _get_current_labels_new_loss(self):

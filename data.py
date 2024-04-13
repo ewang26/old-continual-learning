@@ -158,8 +158,11 @@ class KMeansMemorySetManager(MemorySetManager):
         return memory_x_concat, memory_y_concat
     
 
-# JONATHAN LAMBDA METHOD
+# Jonathan Lambda Method
 class LambdaMemorySetManager(MemorySetManager):
+    # for task 0, memory set does not exist
+    # for task 1, memory set is the forward pass through the network on the task 0 model, then pick the highest lambda
+    # for task 2, memory set is the forward pass through the network on the full model, then pick highest lambda
     def __init__(self, p: float, random_seed: int = 42):
         """
         Args:
@@ -178,8 +181,37 @@ class LambdaMemorySetManager(MemorySetManager):
             # calculate T[i], the trace of the matrix R, which is equivalent to the hessian of the loss wrt the output layer
         # sort T from greatest to least and denote the memory set as the first m elements, where m = n*p.
         # return this memory set.
-        pass
+        self.memory_set_size = int(x.shape[0] * self.p)
+        return torch.empty(0), torch.empty(0)
 
+    def update_memory_lambda(self, memory_x,  memory_y, sample_x, sample_y, outputs):
+        """
+        Function to update the memory buffer.
+        memory_x and memory_y are the existing memory datasets.
+        sample_x and sample_y are the full data from the terminal task that """
+        terminal_task_size = outputs.shape[0]
+        trace_list = []
+        for i in range(terminal_task_size):
+            # take output layer and apply softmax to get probabilities of classification for each output
+            class_p = torch.softmax(outputs[i], dim=0)
+            # create a matrix of p @ (1-p).T to represent decision uncertainty at each class
+            decision_uncertainty = torch.ger(class_p, (1 - class_p).T)
+            # calculate the trace of this matrix to assess the uncertainty in classification across multiple classes
+            decision_trace = torch.trace(decision_uncertainty)
+            trace_list.append(decision_trace.item())
+
+        # calculate size of memory set to create
+        memory_size = int(terminal_task_size*self.p)
+        # getting indexes of the highest trace 
+        argsorted_indx = sorted(range(len(trace_list)), key=lambda x: trace_list[x], reverse=True)
+        desired_indx = argsorted_indx[:memory_size]
+
+        # concatenating to existing memory set
+        # TODO: need to get the actual data in this function
+        memory_x = torch.cat((memory_x, sample_x[desired_indx]))
+        memory_y = torch.cat((memory_y, sample_y[desired_indx]))
+        print('done')
+        return memory_x, memory_y.long()
 
 # Alan Gradient Sample Selection (GSS)
 class GSSMemorySetManager(MemorySetManager):
