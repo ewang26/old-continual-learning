@@ -349,7 +349,7 @@ class ContinualLearningManager(ABC):
                 #print(grad_batch)
                 
                 #assert(False)
-                self.tasks[self.task_index].update_memory_set(batch_x, batch_y, grad_sample, grad_batch)
+                self.tasks[self.task_index].update_memory_set(batch_x, batch_y, grad_sample=grad_sample, grad_batch=grad_batch)
 
 
         return None
