@@ -862,8 +862,8 @@ class ContinualLearningManager(ABC):
         self.tasks[self.task_index].active = True
 
         # update memory set buffer size
-        if self.tasks[self.task_index].memory_set_manager.__class__.__name__ in ['GSSMemorySetManager']:
-            self.tasks[self.task_index].memory_set_manager.memory_set_size += self.tasks[self.task_index].memory_set_manager.memory_set_inc
+        if self.memory_set_manager.__class__.__name__ in ['GSSMemorySetManager']:
+           self.tasks[self.task_index].memory_set_manager.memory_set_size += self.tasks[self.task_index].memory_set_manager.memory_set_inc
 
     def _get_current_labels(self):
         running_tasks = self.tasks[: self.task_index + 1]
