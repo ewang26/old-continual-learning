@@ -299,3 +299,96 @@ class GSSMemorySetManager(MemorySetManager):
         #     input()
         
         return memory_x, memory_y.long(), C_arr
+
+# Erik class-balanced reservoir sampling
+class ClassBalancedReservoirSampling:
+    def __init__(self, p: float, random_seed: int = 42):
+        """
+        Initializes the sampling process.
+
+        Args:
+            p: Probability of an element being in the memory set.
+            random_seed: Seed for the random number generator to ensure reproducibility.
+        """
+        self.p = p
+        self.generator = torch.Generator().manual_seed(random_seed)
+        self.memory_x = torch.Tensor().new_empty((0,)) 
+        self.memory_y = torch.Tensor().new_empty((0,), dtype=torch.long)
+        self.class_counts_in_memory = {}
+        self.stream_class_counts = {}
+        self.memory_set_size = 0
+        self.full_classes = set()
+
+    def update_memory_set(self, x_i: torch.Tensor, y_i: torch.Tensor):
+        """
+        Updates the memory set with the new instance (x_i, y_i), following the reservoir sampling algorithm.
+
+        Args:
+            x_i: The instance of x data.
+            y_i: The instance of y data (class label).
+        """
+        y_i_item = y_i.item()
+        
+        self.stream_class_counts[y_i_item] = self.stream_class_counts.get(y_i_item, 0) + 1
+
+        if self.memory_y.numel() < self.memory_set_size:
+            # memory is not filled, so we add the new instance
+            self.memory_x = torch.cat([self.memory_x, x_i.unsqueeze(0)], dim=0)
+            self.memory_y = torch.cat([self.memory_y, y_i.unsqueeze(0)], dim=0)
+
+            # the line below ensures that if y_i_item is not already a key in the dictionary, the method will return 0
+            self.class_counts_in_memory[y_i_item] = self.class_counts_in_memory.get(y_i_item, 0) + 1
+            # this checks if the class has become full because of the addition
+            if len(self.memory_y) == self.memory_set_size:
+                largest_class = max(self.class_counts_in_memory, key=self.class_counts_in_memory.get)
+                self.full_classes.add(largest_class)
+        else:
+            # first determine if the class is full. if not, then select and replace an instance from the largest class
+            if y_i_item not in self.full_classes:
+                # identify the largest class that is considered full
+                largest_class_item = max(self.class_counts_in_memory.items(), key=lambda item: item[1])[0]
+                indices_of_largest_class = (self.memory_y == largest_class_item).nonzero(as_tuple=True)[0]
+                replace_index = indices_of_largest_class[torch.randint(0, len(indices_of_largest_class), (1,), generator=self.generator)].item()
+                self.memory_x[replace_index] = x_i
+                self.memory_y[replace_index] = y_i
+
+                # update the class counts accordingly
+                self.class_counts_in_memory[largest_class_item] -= 1
+                self.class_counts_in_memory[y_i_item] = self.class_counts_in_memory.get(y_i_item, 0) + 1
+
+                # check and update full status for replaced class
+                if self.class_counts_in_memory[largest_class_item] <= max(self.class_counts_in_memory.values()):
+                    self.full_classes.add(max(self.class_counts_in_memory, key=self.class_counts_in_memory.get))
+            else:
+                # if the class is already full, apply the sampling decision based on mc/nc
+                mc = self.class_counts_in_memory[y_i_item]
+                nc = self.stream_class_counts[y_i_item]
+                if torch.rand(1, generator=self.generator).item() <= mc / nc:
+                    indices_of_y_i_class = (self.memory_y == y_i_item).nonzero(as_tuple=True)[0]
+                    replace_index = indices_of_y_i_class[torch.randint(0, len(indices_of_y_i_class), (1,), generator=self.generator)].item()
+                    self.memory_x[replace_index] = x_i
+                    self.memory_y[replace_index] = y_i
+
+    def create_memory_set(self, x: torch.Tensor, y: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        """
+        Creates the memory set using class-balanced reservoir sampling.
+
+        Args:
+            x: Input features as a tensor.
+            y: Corresponding labels as a tensor.
+
+        Returns:
+            A tuple containing tensors for the memory set's features and labels.
+        """
+        self.memory_set_size = int(x.shape[0] * self.p)
+        # reset memory and counts
+        self.memory_x = x.new_empty((0, *x.shape[1:]))
+        self.memory_y = y.new_empty((0,), dtype=torch.long)
+        self.class_counts_in_memory = {}
+        self.stream_class_counts = {}
+        self.full_classes = set()
+
+        for i in range(x.shape[0]):
+            self.update_memory_set(x[i], y[i])
+
+        return self.memory_x, self.memory_y
