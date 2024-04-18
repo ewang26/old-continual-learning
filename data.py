@@ -43,11 +43,8 @@ class RandomMemorySetManager(MemorySetManager):
             (x_mem, y_mem) tuple.
         """
 
-        if self.p <= 1.0:
-            memory_set_size = int(x.shape[0] * self.p)
-        else:
-            memory_set_size = min(int(self.p), x.shape[0])
-
+        memory_set_size = int(np.ceil(x.shape[0] * self.p))
+       
         # Select memeory set random elements from x and y, without replacement
         memory_set_indices = torch.randperm(x.shape[0], generator=self.generator)[
             :memory_set_size
@@ -55,9 +52,25 @@ class RandomMemorySetManager(MemorySetManager):
         memory_x = x[memory_set_indices]
         memory_y = y[memory_set_indices]
 
-        # print(f"The number of 0s is: {np.count_nonzero(memory_y != 0)}")
-        # print(f"The number of 1s is: {np.count_nonzero(memory_y == 0)}")
+        print(f"len of memory x is: {len(memory_x)}")
+
         return memory_x, memory_y
+
+        # if self.p <= 1.0:
+        #     memory_set_size = int(x.shape[0] * self.p)
+        # else:
+        #     memory_set_size = int(self.p)
+
+        # # Select memeory set random elements from x and y, without replacement
+        # memory_set_indices = torch.randperm(x.shape[0], generator=self.generator)[
+        #     :memory_set_size
+        # ]
+        # memory_x = x[memory_set_indices]
+        # memory_y = y[memory_set_indices]
+
+        # print(f"len of memory x is: {len(memory_x)}")
+
+        # return memory_x, memory_y, 
 
 #THEODORA K-MEANS
 class KMeansMemorySetManager(MemorySetManager):

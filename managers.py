@@ -246,7 +246,7 @@ class ContinualLearningManager(ABC):
         label_weights = np.ones(len(current_labels))
         label_weights[:-1] = 1/p
         label_weights = torch.from_numpy(label_weights).float()
-
+        
         # set model to eval, define loss fn
         model.train()
         model.to(DEVICE)
@@ -455,9 +455,10 @@ class ContinualLearningManager(ABC):
                 TODO loop through current batch, for each sample get grad of sample + grad of random subset of memory set
                 pass values to update memory set of CURRENT task (to be used in later tasks)
                 '''
-                grad_sample = 0
-                grad_batch = 0
-                self.tasks[self.task_index].update_memory_set(grad_sample, grad_batch)
+                # commented 4/17 EW
+                # grad_sample = 0
+                # grad_batch = 0
+                # self.tasks[self.task_index].update_memory_set(grad_sample, grad_batch)
 
             callbacks['loss'].append(total_loss)
 

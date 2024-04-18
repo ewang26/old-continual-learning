@@ -144,6 +144,7 @@ def main(config: Config):
 
                     # Train model from scratch
                     if model_save_dir is not None:
+
                         #create save dir
                         mem_sel_path = f"{model_save_dir}/{config.memory_selection_method}"
                         if not os.path.exists(mem_sel_path): os.mkdir(mem_sel_path)
@@ -156,6 +157,7 @@ def main(config: Config):
                         model_save_path = f"{model_train_save_dir}/task_{task_num}"
                         if not os.path.exists(model_save_path):
                             os.mkdir(model_save_path)
+                            
                     else:
                         model_save_path = None
 

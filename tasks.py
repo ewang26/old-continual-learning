@@ -42,7 +42,8 @@ class Task:
         )
         self.task_labels = task_labels
         self.active = False
-
+        self.memory_set_manager = memory_set_manager
+        
         if memory_set_manager.__class__.__name__ == 'GSSMemorySetManager':
             self.memory_set_manager = memory_set_manager # save the manager for future use
             self.C_arr = np.array([]) # initialize score array for memory set
