@@ -46,12 +46,8 @@ def setup_wandb(config: Config):
 def main(config: Config):
     if config.use_wandb:
         setup_wandb(config)
-    use_seed = config.use_seed
-    if use_seed:
-        print('using seed for runs')
-        rng = np.random.default_rng(seed = config.random_seed)
-    else:
-        print('NOT using seed for runs')
+    
+    rng = np.random.default_rng(seed = config.random_seed)
 
     # loop through all p-values that we list
     for p_index, p in enumerate(config.p_arr):
@@ -61,8 +57,7 @@ def main(config: Config):
         num_samples = getattr(config, "num_samples", 0)[p_index]
 
         for sample_num in range(num_samples):
-            if use_seed:
-                random_seed = int(rng.integers(low=0, high=1e6))
+            random_seed = int(rng.integers(low=0, high=1e6))
             # memory_set_manager = config.memory_set_manager(
             #     p, random_seed=random_seed
             # )
@@ -77,12 +72,8 @@ def main(config: Config):
                 print("Model load path given so loading model and not training")
                 print("If this is unintended behaviour, remove model_load_dir from config")
 
-            #K-MEANS Addition
             if config.memory_set_manager == RandomMemorySetManager:
-                if use_seed:
                     memory_set_manager = config.memory_set_manager(p, random_seed=random_seed)
-                else:
-                    memory_set_manager = config.memory_set_manager(p)
             elif config.memory_set_manager == KMeansMemorySetManager:
                 memory_set_manager = config.memory_set_manager(
                     p,
@@ -91,10 +82,7 @@ def main(config: Config):
                     random_seed=random_seed
                 )
             elif config.memory_set_manager == GSSMemorySetManager:
-                if use_seed:
-                    memory_set_manager = config.memory_set_manager(p, random_seed=random_seed)
-                else:
-                    memory_set_manager = config.memory_set_manager(p)
+                memory_set_manager = config.memory_set_manager(p, random_seed=random_seed)
             else:
                 raise ValueError(f"Unsupported memory set manager: {config.memory_set_manager}")
             
