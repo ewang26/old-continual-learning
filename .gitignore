@@ -7,18 +7,18 @@
 **/models/mnist_split_old
 **/configs
 **/model/cifar_split_old
-**/models/
+#**/models/
 # **/models/cifar10_split
 # **/models/mnist_split
 # **/artifacts/
-# **/models/mnist_split/GSS_random_img
+**/models/mnist_split/GSS_random_img
 # **/models/mnist_split/GSS
-# **/models/mnist_split/GSS_old
-# **/models/mnist_split/ideal_model_old
-# **/models/mnist_split/random_old
-# **/models/mnist_split/random_random_img
+**/models/mnist_split/GSS_old
+**/models/mnist_split/ideal_model_old
+**/models/mnist_split/random_old
+**/models/mnist_split/random_random_img
 # **/models/mnist_split/random
-# **/models/mnist_split/random_ideal_model
+**/models/mnist_split/random_ideal_model
 # **/sanity_checks
 
 # Byte-compiled / optimized / DLL files
