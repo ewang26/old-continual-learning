@@ -1,6 +1,6 @@
 #main_batch 
 
-from data import RandomMemorySetManager, KMeansMemorySetManager, GSSMemorySetManager
+from data import RandomMemorySetManager, KMeansMemorySetManager, LambdaMemorySetManager, GSSMemorySetManager
 from managers import MnistManagerSplit, Cifar10ManagerSplit, Cifar100ManagerSplit
 from configs.config import Config
 from pathlib import Path
@@ -81,6 +81,8 @@ def main(config: Config):
                     device=config.device,
                     random_seed=random_seed
                 )
+            elif config.memory_set_manager == LambdaMemorySetManager:
+                memory_set_manager = config.memory_set_manager(p) # more parameters to come soon
             elif config.memory_set_manager == GSSMemorySetManager:
                 memory_set_manager = config.memory_set_manager(p, random_seed=random_seed)
             else:
