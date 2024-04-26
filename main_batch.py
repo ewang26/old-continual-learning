@@ -81,6 +81,8 @@ def main(config: Config):
                     device=config.device,
                     random_seed=random_seed
                 )
+            elif config.memory_set_manager == LambdaMemorySetManager:
+                memory_set_manager = config.memory_set_manager(p) # more parameters to come soon
             elif config.memory_set_manager == GSSMemorySetManager:
                 memory_set_manager = config.memory_set_manager(p, random_seed=random_seed)
             elif config.memory_set_manager == ClassBalancedReservoirSampling:

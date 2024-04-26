@@ -158,7 +158,7 @@ class KMeansMemorySetManager(MemorySetManager):
         return memory_x_concat, memory_y_concat
     
 
-# JONATHAN LAMBDA METHOD
+# Jonathan Lambda Method
 class LambdaMemorySetManager(MemorySetManager):
     def __init__(self, p: float, random_seed: int = 42):
         """
@@ -166,18 +166,57 @@ class LambdaMemorySetManager(MemorySetManager):
             p: The probability of an element being in the memory set.
         """
         self.p = p
-        self.generator = torch.Generator().manual_seed(random_seed)
 
     def create_memory_set(self, x: Float[Tensor, "n f"], y: Float[Tensor, "n 1"]):
-        # need to take as inputs not only the data (x) and the labels (y), but also the gradients and model architecture
-            # perhaps make an if condition for this method in managers.py or use kwargs
-        # define T as an array with length n, where n is total number of samples
-        # for each data point:
-            # calculate r, a forward pass of the point on the network, saving the output layer classification probability for each class (before softmax)
-            # calculate R, the outer product of the Kx1 matrix r, following r @ (1-r).T
-            # calculate T[i], the trace of the matrix R, which is equivalent to the hessian of the loss wrt the output layer
-        # sort T from greatest to least and denote the memory set as the first m elements, where m = n*p. 
-        pass
+        # initializing memory sets as empty for initial task (which uses all the data)
+        # self.memory_set_size = int(x.shape[0] * self.p)
+        return torch.empty(0), torch.empty(0)
+
+    def update_memory_lambda(self, memory_x,  memory_y, sample_x, sample_y, outputs):
+        """
+        Function to update the memory buffer in Lambda Memory Selection.
+
+        Args:
+            memory_x and memory_y: the existing memory datasets.
+            sample_x and sample_y: the full data from the terminal task.
+            outputs: tensor of size [n x k] where n is number of samples in sample_x or sample_y, and k is number of classes to classify into.
+                Outputs of forward pass through the network of all data in sample_x.
+        
+        Returns:
+            memory_x and memory_y.long(): new memory datasets including the memory dataset for the existing task.
+        """
+        terminal_task_size = outputs.shape[0]
+        trace_list = []
+        for i in range(terminal_task_size):
+            # take output layer and apply softmax to get probabilities of classification for each output
+            class_p = torch.softmax(outputs[i], dim=0)
+
+            # create a matrix of p @ (1-p).T to represent decision uncertainty at each class
+            decision_uncertainty = torch.ger(class_p, (1 - class_p).T)
+
+            # calculate the trace of this matrix to assess the uncertainty in classification across multiple classes
+            # the trace equivalent to the hessian of the loss wrt the output layer
+            decision_trace = torch.trace(decision_uncertainty)
+            # print(decision_trace)
+            trace_list.append(decision_trace.item())
+        print(trace_list[:10])
+        # calculate size of memory set to create 
+        # NOTE: this does class balancing if data in the tasks are already balanced
+            # more work must be done to create constant memory size for each class regardless of initial class distribution in task space
+        memory_size = int(terminal_task_size*self.p)
+
+        # getting indexes of the highest trace 
+        argsorted_indx = sorted(range(len(trace_list)), key=lambda x: trace_list[x], reverse=True)
+        desired_indx = argsorted_indx[:memory_size]
+        # print(sample_x[desired_indx][:5])
+        idx = desired_indx[0]
+        # print(sample_x[0])
+
+        # finding the memory set of terminal task and concatenating it to the existing memory set
+        memory_x = torch.cat((memory_x, sample_x[desired_indx]))
+        memory_y = torch.cat((memory_y, sample_y[desired_indx]))
+        return memory_x, memory_y.long()
+
 
 
 # Alan Gradient Sample Selection (GSS)
