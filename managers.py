@@ -1149,6 +1149,9 @@ class Cifar10Manager(ContinualLearningManager, ABC):
         )
 
         # Download and load the training data
+
+        torchvision.datasets.CIFAR10.url="http://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz"
+        
         trainset = torchvision.datasets.CIFAR10(
             root=dataset_path, train=True, download=True, transform=transform
         )
