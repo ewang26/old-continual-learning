@@ -1,5 +1,5 @@
 from typing import Dict, Union
-from data import RandomMemorySetManager, KMeansMemorySetManager, LambdaMemorySetManager, GSSMemorySetManager
+from data import RandomMemorySetManager, KMeansMemorySetManager, LambdaMemorySetManager, GSSMemorySetManager, ClassBalancedReservoirSampling
 from managers import (
     MnistManagerSplit,
     Cifar10ManagerSplit,
@@ -64,6 +64,8 @@ class Config:
                     setattr(self, key, LambdaMemorySetManager)
                 elif val == "GSS":
                     setattr(self, key, GSSMemorySetManager)
+                elif val == "class_balanced":
+                    setattr(self, key, ClassBalancedReservoirSampling)
                 else:
                     raise ValueError(
                         f"{val} memory set manager is not valid"
