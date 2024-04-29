@@ -1,0 +1,11 @@
+Using CUDA
+Seed given in config, setting deterministic run
+*** starting experiment for p = 0.001
+Using CUDA
+Seed given in config, setting deterministic run
+*** starting experiment for p = 0.001
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Downloading http://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz to ./data/cifar-10-python.tar.gz
+Extracting ./data/cifar-10-python.tar.gz to ./data
+Files already downloaded and verified

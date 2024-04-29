@@ -8,7 +8,7 @@
 #**/configs
 **/model/cifar_split_old
 #**/models/
-# **/models/cifar10_split
+#models/cifar10_split/
 # **/models/mnist_split
 # **/artifacts/
 **/models/mnist_split/GSS_random_img

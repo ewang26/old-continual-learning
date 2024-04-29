@@ -1,0 +1,12 @@
+Traceback (most recent call last):
+  File "/n/home05/alanhsu/workspace/research/continual_learning/main_batch.py", line 3, in <module>
+    from data import RandomMemorySetManager, KMeansMemorySetManager, LambdaMemorySetManager, GSSMemorySetManager, ClassBalancedReservoirSampling
+  File "/n/home05/alanhsu/workspace/research/continual_learning/data.py", line 12, in <module>
+    from sklearn.cluster import KMeans
+ModuleNotFoundError: No module named 'sklearn'
+Traceback (most recent call last):
+  File "/n/home05/alanhsu/workspace/research/continual_learning/main_batch.py", line 3, in <module>
+    from data import RandomMemorySetManager, KMeansMemorySetManager, LambdaMemorySetManager, GSSMemorySetManager, ClassBalancedReservoirSampling
+  File "/n/home05/alanhsu/workspace/research/continual_learning/data.py", line 12, in <module>
+    from sklearn.cluster import KMeans
+ModuleNotFoundError: No module named 'sklearn'
