@@ -156,7 +156,8 @@ def main(config: Config):
                         #                                                                                             batch_size = 64)[0])
                 else:
                     # right now, training is only implemented for 1 sample per p
-                    assert num_samples == 1
+                    # update: commented out for training multiple models
+                    #assert num_samples == 1
 
                     # Train model from scratch
                     if model_save_dir is not None:
@@ -166,7 +167,7 @@ def main(config: Config):
                         model_p_save_dir = f'{mem_sel_path}/{p}'
                         if not os.path.exists(model_p_save_dir): os.mkdir(model_p_save_dir)
                         # create train save dir
-                        model_train_save_dir = f'{model_p_save_dir}/train'
+                        model_train_save_dir = f'{model_p_save_dir}/train_{sample_num}'
                         if not os.path.exists(model_train_save_dir): os.mkdir(model_train_save_dir)
                         #create task specific save dir
                         model_save_path = f"{model_train_save_dir}/task_{task_num}"
