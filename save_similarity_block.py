@@ -108,15 +108,15 @@ def compute_gradient_similarity(metric_list,
 def main():
     metric_list = [cos_sim]
     metric_names = ['Cosine Similarity']
-    p_vals = [0.001, 0.1, 1]
+    p_vals = [0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1]
     model_weight_types = ['weight', 'bias']
     model_layer_names = ['grad_layers.0', 'grad_output_layer']
     dataset_name = 'mnist_split'
     grad_type_arr = ['past']
-    memory_method_arr = ['random', 'class_balanced']
+    memory_method_arr = ['random', 'class_balanced', 'GSS', 'lambda']
     num_tasks = 5
-    num_ideal_models = 5
-    num_runs = 2
+    num_ideal_models = 10
+    num_runs = 10
 
     compute_gradient_similarity(metric_list = metric_list, 
                                 metric_names = metric_names,
