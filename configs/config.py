@@ -24,6 +24,7 @@ class Config:
         self.num_samples = np.array(self.config_dict['num_samples'])
         self.memory_selection_method = self.config_dict['memory_set_manager']
         self.use_random_img = self.config_dict['use_random_img']
+        self.num_ideal_models = self.config_dict['num_ideal_models']
         #print(self.p_arr)
         
         #k-means addtions

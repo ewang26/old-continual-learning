@@ -106,45 +106,50 @@ def main(config: Config):
             for task_num in range(num_tasks):
                 
                 if model_load_dir is not None:
-                    #for grad_loc in ['start', 'end']: # eval grad at both start and end of task
-                    # Load model and run evaluation
-                    post_train_model_load_path = (
-                        #f'{model_load_dir}/{config.memory_selection_method}/1/train/task_{task_num}/{grad_loc}_grad/model.pt'
-                        #f'{model_load_dir}/ideal_model/task_{task_num}/{grad_loc}_grad/model.pt'
-                        f'{model_load_dir}/ideal_model/task_{task_num}/model.pt'
-                        #f'{model_load_dir}/ideal_model/{config.memory_selection_method}/1/train/task_{task_num}/{grad_loc}_grad/model.pt'
-                    )
-                    post_train_model = torch.load(post_train_model_load_path)
-                    # Can get pre training model 
+                    
+                    for ideal_model_index in range(config.num_ideal_models):
+                    
+                        #for grad_loc in ['start', 'end']: # eval grad at both start and end of task
+                        # Load model and run evaluation
+                        post_train_model_load_path = (
+                            #f'{model_load_dir}/{config.memory_selection_method}/1/train/task_{task_num}/{grad_loc}_grad/model.pt'
+                            #f'{model_load_dir}/ideal_model/task_{task_num}/{grad_loc}_grad/model.pt'
+                            f'{model_load_dir}/ideal_model/train_{ideal_model_index}/task_{task_num}/model.pt'
+                            #f'{model_load_dir}/ideal_model/{config.memory_selection_method}/1/train/task_{task_num}/{grad_loc}_grad/model.pt'
+                        )
+                        post_train_model = torch.load(post_train_model_load_path)
+                        # Can get pre training model 
 
-                    for grad_type in config.grad_type:
-                        
-                        if not ((grad_type == 'past') and (task_num == 0)): # no past gradients for first task
-                            # save gradients w.r.t ideal weights
-                            if config.use_random_img:
-                                mem_sel_path = f"{model_load_dir}/{config.memory_selection_method}_random_img"
-                            else:
-                                mem_sel_path = f"{model_load_dir}/{config.memory_selection_method}"
-                            if not os.path.exists(mem_sel_path): os.mkdir(mem_sel_path)
-                            p_save_path = f"{mem_sel_path}/{p}" # save path for 0.x of memory set
-                            if not os.path.exists(p_save_path): os.mkdir(p_save_path)
-                            run_save_path = f"{p_save_path}/run_{sample_num}" # save path for a specific run
-                            if not os.path.exists(run_save_path): os.mkdir(run_save_path)
-                            grad_save_path = f"{run_save_path}/grad_task_{task_num}"
-                            if not os.path.exists(grad_save_path): os.mkdir(grad_save_path)
-                            loc_save_path = f"{grad_save_path}/{grad_type}_grad"
-                            if not os.path.exists(loc_save_path): os.mkdir(loc_save_path)
+                        for grad_type in config.grad_type:
                             
-                            # save gradients function
-                            manager.compute_gradients_at_ideal(
-                                model = post_train_model,
-                                grad_save_path = loc_save_path,
-                                p = p,
-                                grad_type = grad_type,
-                                use_random_img = config.use_random_img)
-                            
-                        # update memory set (if needed)
-                        manager.update_memory_set(model = post_train_model, p = p)
+                            if not ((grad_type == 'past') and (task_num == 0)): # no past gradients for first task
+                                # save gradients w.r.t ideal weights
+                                if config.use_random_img:
+                                    mem_sel_path = f"{model_load_dir}/{config.memory_selection_method}_random_img"
+                                else:
+                                    mem_sel_path = f"{model_load_dir}/{config.memory_selection_method}"
+                                if not os.path.exists(mem_sel_path): os.mkdir(mem_sel_path)
+                                p_save_path = f"{mem_sel_path}/{p}" # save path for 0.x of memory set
+                                if not os.path.exists(p_save_path): os.mkdir(p_save_path)
+                                run_save_path = f"{p_save_path}/run_{sample_num}" # save path for a specific run
+                                if not os.path.exists(run_save_path): os.mkdir(run_save_path)
+                                specific_run_save_path = f"{run_save_path}/train_{ideal_model_index}" # save path for a specific ideal_model eval
+                                if not os.path.exists(specific_run_save_path): os.mkdir(specific_run_save_path)
+                                grad_save_path = f"{specific_run_save_path}/grad_task_{task_num}"
+                                if not os.path.exists(grad_save_path): os.mkdir(grad_save_path)
+                                loc_save_path = f"{grad_save_path}/{grad_type}_grad"
+                                if not os.path.exists(loc_save_path): os.mkdir(loc_save_path)
+                                
+                                # save gradients function
+                                manager.compute_gradients_at_ideal(
+                                    model = post_train_model,
+                                    grad_save_path = loc_save_path,
+                                    p = p,
+                                    grad_type = grad_type,
+                                    use_random_img = config.use_random_img)
+                                
+                            # update memory set (if needed)
+                            manager.update_memory_set(model = post_train_model, p = p)
                             
                         
                         
