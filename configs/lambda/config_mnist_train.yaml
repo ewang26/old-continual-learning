@@ -10,6 +10,7 @@ use_memory_set: True
 grad_type: None
 p: dummar_var
 use_random_img: False
+num_ideal_models: None
 #num_samples: 10
 
 # for gradient evaluating

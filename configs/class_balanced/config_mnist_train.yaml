@@ -9,6 +9,7 @@ memory_set_manager: kmeans
 use_memory_set: True
 grad_type: None
 use_random_img: False
+num_ideal_models: None
 p: dummar_var
 #num_samples: 10
 
