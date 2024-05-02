@@ -1,0 +1,139 @@
+Using CUDA
+Seed given in config, setting deterministic run
+*** starting experiment for p = 0.001
+Files already downloaded and verified
+Files already downloaded and verified
+Training on Task 0
+acc: [0.7995]
+Training on Task 1
+acc: [0.7995, 0.284]
+Training on Task 2
+acc: [0.7995, 0.284, 0.24016666666666667]
+Training on Task 3
+acc: [0.7995, 0.284, 0.24016666666666667, 0.238875]
+Training on Task 4
+acc: [0.7995, 0.284, 0.24016666666666667, 0.238875, 0.2007]
+*** starting experiment for p = 0.002
+Files already downloaded and verified
+Files already downloaded and verified
+Training on Task 0
+acc: [0.928]
+Training on Task 1
+acc: [0.928, 0.382]
+Training on Task 2
+acc: [0.928, 0.382, 0.2991666666666667]
+Training on Task 3
+acc: [0.928, 0.382, 0.2991666666666667, 0.25275]
+Training on Task 4
+acc: [0.928, 0.382, 0.2991666666666667, 0.25275, 0.2193]
+*** starting experiment for p = 0.005
+Files already downloaded and verified
+Files already downloaded and verified
+Training on Task 0
+acc: [0.9205]
+Training on Task 1
+acc: [0.9205, 0.39925]
+Training on Task 2
+acc: [0.9205, 0.39925, 0.3313333333333333]
+Training on Task 3
+acc: [0.9205, 0.39925, 0.3313333333333333, 0.282]
+Training on Task 4
+acc: [0.9205, 0.39925, 0.3313333333333333, 0.282, 0.2685]
+*** starting experiment for p = 0.01
+Files already downloaded and verified
+Files already downloaded and verified
+Training on Task 0
+acc: [0.9385]
+Training on Task 1
+acc: [0.9385, 0.547]
+Training on Task 2
+acc: [0.9385, 0.547, 0.41633333333333333]
+Training on Task 3
+acc: [0.9385, 0.547, 0.41633333333333333, 0.36475]
+Training on Task 4
+acc: [0.9385, 0.547, 0.41633333333333333, 0.36475, 0.3503]
+*** starting experiment for p = 0.02
+Files already downloaded and verified
+Files already downloaded and verified
+Training on Task 0
+acc: [0.9515]
+Training on Task 1
+acc: [0.9515, 0.6375]
+Training on Task 2
+acc: [0.9515, 0.6375, 0.4855]
+Training on Task 3
+acc: [0.9515, 0.6375, 0.4855, 0.445125]
+Training on Task 4
+acc: [0.9515, 0.6375, 0.4855, 0.445125, 0.4257]
+*** starting experiment for p = 0.05
+Files already downloaded and verified
+Files already downloaded and verified
+Training on Task 0
+acc: [0.955]
+Training on Task 1
+acc: [0.955, 0.69825]
+Training on Task 2
+acc: [0.955, 0.69825, 0.5518333333333333]
+Training on Task 3
+acc: [0.955, 0.69825, 0.5518333333333333, 0.5165]
+Training on Task 4
+acc: [0.955, 0.69825, 0.5518333333333333, 0.5165, 0.5073]
+*** starting experiment for p = 0.1
+Files already downloaded and verified
+Files already downloaded and verified
+Training on Task 0
+acc: [0.9625]
+Training on Task 1
+acc: [0.9625, 0.75575]
+Training on Task 2
+acc: [0.9625, 0.75575, 0.6158333333333333]
+Training on Task 3
+acc: [0.9625, 0.75575, 0.6158333333333333, 0.582125]
+Training on Task 4
+acc: [0.9625, 0.75575, 0.6158333333333333, 0.582125, 0.5694]
+*** starting experiment for p = 0.2
+Files already downloaded and verified
+Files already downloaded and verified
+Training on Task 0
+acc: [0.9575]
+Training on Task 1
+acc: [0.9575, 0.79175]
+Training on Task 2
+acc: [0.9575, 0.79175, 0.6563333333333333]
+Training on Task 3
+acc: [0.9575, 0.79175, 0.6563333333333333, 0.62175]
+Training on Task 4
+acc: [0.9575, 0.79175, 0.6563333333333333, 0.62175, 0.6091]
+*** starting experiment for p = 0.5
+Files already downloaded and verified
+Files already downloaded and verified
+Training on Task 0
+acc: [0.9605]
+Training on Task 1
+acc: [0.9605, 0.8075]
+Training on Task 2
+acc: [0.9605, 0.8075, 0.6796666666666666]
+Training on Task 3
+acc: [0.9605, 0.8075, 0.6796666666666666, 0.6545]
+Training on Task 4
+acc: [0.9605, 0.8075, 0.6796666666666666, 0.6545, 0.644]
+*** starting experiment for p = 1
+Files already downloaded and verified
+Files already downloaded and verified
+Training on Task 0
+acc: [0.9545]
+Training on Task 1
+acc: [0.9545, 0.8075]
+Training on Task 2
+acc: [0.9545, 0.8075, 0.6935]
+Training on Task 3
+acc: [0.9545, 0.8075, 0.6935, 0.669]
+Training on Task 4
+acc: [0.9545, 0.8075, 0.6935, 0.669, 0.6544]
+Using CUDA
+Seed given in config, setting deterministic run
+*** starting experiment for p = 0.001
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Files already downloaded and verified
+Files already downloaded and verified

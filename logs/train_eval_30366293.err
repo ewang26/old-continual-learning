@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "/n/home05/alanhsu/workspace/research/continual_learning/main_batch.py", line 243, in <module>
+    config = Config(config_dict)
+  File "/n/home05/alanhsu/workspace/research/continual_learning/configs/config.py", line 27, in __init__
+    self.num_ideal_models = self.config_dict['num_ideal_models']
+KeyError: 'num_ideal_models'

@@ -113,7 +113,7 @@ def main():
     model_layer_names = ['grad_layers.0', 'grad_output_layer']
     dataset_name = 'mnist_split'
     grad_type_arr = ['past']
-    memory_method_arr = ['random', 'class_balanced', 'GSS', 'lambda']
+    memory_method_arr = ['random', 'class_balanced']#, 'GSS', 'lambda']
     num_tasks = 5
     num_ideal_models = 10
     num_runs = 10

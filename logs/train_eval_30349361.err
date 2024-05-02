@@ -1,0 +1,2 @@
+/var/slurmd/spool/slurmd/job30349361/slurm_script: line 14: 1602518 Killed                  python /n/home05/alanhsu/workspace/research/continual_learning/main_batch.py --config /n/home05/alanhsu/workspace/research/continual_learning/configs/class_balanced/config_cifar_grad_eval.yaml
+slurmstepd: error: Detected 1 oom_kill event in StepId=30349361.batch. Some of the step tasks have been OOM Killed.
