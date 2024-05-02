@@ -1,6 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
-import skimage
 import os
 
 # converting to square

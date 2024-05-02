@@ -1,0 +1,2 @@
+/n/home05/alanhsu/workspace/research/continual_learning/save_similarity_block.py:14: RuntimeWarning: divide by zero encountered in scalar divide
+  return 0 if dot == 0 else dot / (np.linalg.norm(actual_flat) * np.linalg.norm(ideal_flat))
