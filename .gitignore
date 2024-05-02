@@ -8,6 +8,7 @@
 #**/configs
 **/model/cifar_split_old
 #**/models/
+models/cifar10_split_old/
 models/cifar10_split/
 models/mnist_split/
 # **/artifacts/
