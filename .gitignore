@@ -11,6 +11,7 @@
 models/cifar10_split_old/
 models/cifar10_split/
 models/mnist_split/
+models/mnist_split_old/
 # **/artifacts/
 # **/models/mnist_split/GSS_random_img
 # # **/models/mnist_split/GSS
