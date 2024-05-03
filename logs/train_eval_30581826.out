@@ -1,0 +1,416 @@
+Using CUDA
+Seed given in config, setting deterministic run
+*** starting experiment for p = 1
+Training on Task 0
+acc: [0.9995271867612293]
+Training on Task 1
+acc: [0.9995271867612293, 0.9937454895357228]
+Training on Task 2
+acc: [0.9995271867612293, 0.9937454895357228, 0.989719781130824]
+Training on Task 3
+acc: [0.9995271867612293, 0.9937454895357228, 0.989719781130824, 0.9862791567918174]
+Training on Task 4
+acc: [0.9995271867612293, 0.9937454895357228, 0.989719781130824, 0.9862791567918174, 0.9766]
+Training on Task 0
+acc: [0.9995271867612293]
+Training on Task 1
+acc: [0.9995271867612293, 0.9949482800096223]
+Training on Task 2
+acc: [0.9995271867612293, 0.9949482800096223, 0.9912120709666722]
+Training on Task 3
+acc: [0.9995271867612293, 0.9949482800096223, 0.9912120709666722, 0.986029686915305]
+Training on Task 4
+acc: [0.9995271867612293, 0.9949482800096223, 0.9912120709666722, 0.986029686915305, 0.978]
+Training on Task 0
+acc: [0.9995271867612293]
+Training on Task 1
+acc: [0.9995271867612293, 0.9949482800096223]
+Training on Task 2
+acc: [0.9995271867612293, 0.9949482800096223, 0.9903830210578677]
+Training on Task 3
+acc: [0.9995271867612293, 0.9949482800096223, 0.9903830210578677, 0.9851565423475115]
+Training on Task 4
+acc: [0.9995271867612293, 0.9949482800096223, 0.9903830210578677, 0.9851565423475115, 0.9783]
+Training on Task 0
+acc: [0.9990543735224586]
+Training on Task 1
+acc: [0.9990543735224586, 0.9947077219148425]
+Training on Task 2
+acc: [0.9990543735224586, 0.9947077219148425, 0.9900514010943459]
+Training on Task 3
+acc: [0.9990543735224586, 0.9947077219148425, 0.9900514010943459, 0.9839091929649495]
+Training on Task 4
+acc: [0.9990543735224586, 0.9947077219148425, 0.9900514010943459, 0.9839091929649495, 0.9776]
+Training on Task 0
+acc: [0.9990543735224586]
+Training on Task 1
+acc: [0.9990543735224586, 0.9949482800096223]
+Training on Task 2
+acc: [0.9990543735224586, 0.9949482800096223, 0.9908804510031504]
+Training on Task 3
+acc: [0.9990543735224586, 0.9949482800096223, 0.9908804510031504, 0.9842833977797181]
+Training on Task 4
+acc: [0.9990543735224586, 0.9949482800096223, 0.9908804510031504, 0.9842833977797181, 0.9782]
+Training on Task 0
+acc: [0.9995271867612293]
+Training on Task 1
+acc: [0.9995271867612293, 0.9954293961991821]
+Training on Task 2
+acc: [0.9995271867612293, 0.9954293961991821, 0.9902172110761068]
+Training on Task 3
+acc: [0.9995271867612293, 0.9954293961991821, 0.9902172110761068, 0.9849070724709992]
+Training on Task 4
+acc: [0.9995271867612293, 0.9954293961991821, 0.9902172110761068, 0.9849070724709992, 0.9778]
+Training on Task 0
+acc: [0.9995271867612293]
+Training on Task 1
+acc: [0.9995271867612293, 0.9947077219148425]
+Training on Task 2
+acc: [0.9995271867612293, 0.9947077219148425, 0.9912120709666722]
+Training on Task 3
+acc: [0.9995271867612293, 0.9947077219148425, 0.9912120709666722, 0.9839091929649495]
+Training on Task 4
+acc: [0.9995271867612293, 0.9947077219148425, 0.9912120709666722, 0.9839091929649495, 0.9779]
+Training on Task 0
+acc: [0.9995271867612293]
+Training on Task 1
+acc: [0.9995271867612293, 0.9947077219148425]
+Training on Task 2
+acc: [0.9995271867612293, 0.9947077219148425, 0.9902172110761068]
+Training on Task 3
+acc: [0.9995271867612293, 0.9947077219148425, 0.9902172110761068, 0.9840339279032057]
+Training on Task 4
+acc: [0.9995271867612293, 0.9947077219148425, 0.9902172110761068, 0.9840339279032057, 0.9775]
+Training on Task 0
+acc: [0.9995271867612293]
+Training on Task 1
+acc: [0.9995271867612293, 0.9947077219148425]
+Training on Task 2
+acc: [0.9995271867612293, 0.9947077219148425, 0.9902172110761068]
+Training on Task 3
+acc: [0.9995271867612293, 0.9947077219148425, 0.9902172110761068, 0.9839091929649495]
+Training on Task 4
+acc: [0.9995271867612293, 0.9947077219148425, 0.9902172110761068, 0.9839091929649495, 0.9778]
+Training on Task 0
+acc: [0.9995271867612293]
+Training on Task 1
+acc: [0.9995271867612293, 0.9959105123887418]
+Training on Task 2
+acc: [0.9995271867612293, 0.9959105123887418, 0.9893881611673023]
+Training on Task 3
+acc: [0.9995271867612293, 0.9959105123887418, 0.9893881611673023, 0.9836597230884371]
+Training on Task 4
+acc: [0.9995271867612293, 0.9959105123887418, 0.9893881611673023, 0.9836597230884371, 0.9785]
+Using CUDA
+Seed given in config, setting deterministic run
+*** starting experiment for p = 0.001
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+*** starting experiment for p = 0.002
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+*** starting experiment for p = 0.005
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+*** starting experiment for p = 0.01
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+*** starting experiment for p = 0.02
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+*** starting experiment for p = 0.05
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+*** starting experiment for p = 0.1
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+*** starting experiment for p = 0.2
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+*** starting experiment for p = 0.5
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+*** starting experiment for p = 1
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Model load path given so loading model and not training
+If this is unintended behaviour, remove model_load_dir from config
+Using CUDA
+Seed given in config, setting deterministic run
+*** starting experiment for p = 0.001
+Training on Task 0
+acc: [0.9976359338061466]
+Training on Task 1
+acc: [0.9976359338061466, 0.680298292037527]
+Training on Task 2
+acc: [0.9976359338061466, 0.680298292037527, 0.7000497429945283]
+Training on Task 3
+acc: [0.9976359338061466, 0.680298292037527, 0.7000497429945283, 0.6131969564675065]
+Training on Task 4
+acc: [0.9976359338061466, 0.680298292037527, 0.7000497429945283, 0.6131969564675065, 0.4377]
+*** starting experiment for p = 0.002
+Training on Task 0
+acc: [0.9990543735224586]
+Training on Task 1
+acc: [0.9990543735224586, 0.8987250420976666]
+Training on Task 2
+acc: [0.9990543735224586, 0.8987250420976666, 0.8083236610843972]
+Training on Task 3
+acc: [0.9990543735224586, 0.8987250420976666, 0.8083236610843972, 0.752401147561432]
+Training on Task 4
+acc: [0.9990543735224586, 0.8987250420976666, 0.8083236610843972, 0.752401147561432, 0.6185]
+*** starting experiment for p = 0.005
+Training on Task 0
+acc: [0.9995271867612293]
+Training on Task 1
+acc: [0.9995271867612293, 0.9398604763050277]
+Training on Task 2
+acc: [0.9995271867612293, 0.9398604763050277, 0.8860885425302604]
+Training on Task 3
+acc: [0.9995271867612293, 0.9398604763050277, 0.8860885425302604, 0.8458276163153299]
+Training on Task 4
+acc: [0.9995271867612293, 0.9398604763050277, 0.8860885425302604, 0.8458276163153299, 0.7759]
+*** starting experiment for p = 0.01
+Training on Task 0
+acc: [0.9995271867612293]
+Training on Task 1
+acc: [0.9995271867612293, 0.9610295886456579]
+Training on Task 2
+acc: [0.9995271867612293, 0.9610295886456579, 0.9146078593931355]
+Training on Task 3
+acc: [0.9995271867612293, 0.9610295886456579, 0.9146078593931355, 0.8967194711238617]
+Training on Task 4
+acc: [0.9995271867612293, 0.9610295886456579, 0.9146078593931355, 0.8967194711238617, 0.843]
+*** starting experiment for p = 0.02
+Training on Task 0
+acc: [0.9995271867612293]
+Training on Task 1
+acc: [0.9995271867612293, 0.9812364686071686]
+Training on Task 2
+acc: [0.9995271867612293, 0.9812364686071686, 0.9456143259824241]
+Training on Task 3
+acc: [0.9995271867612293, 0.9812364686071686, 0.9456143259824241, 0.9306473743295497]
+Training on Task 4
+acc: [0.9995271867612293, 0.9812364686071686, 0.9456143259824241, 0.9306473743295497, 0.8967]
+*** starting experiment for p = 0.05
+Training on Task 0
+acc: [1.0]
+Training on Task 1
+acc: [1.0, 0.987009862881886]
+Training on Task 2
+acc: [1.0, 0.987009862881886, 0.9721439230641684]
+Training on Task 3
+acc: [1.0, 0.987009862881886, 0.9721439230641684, 0.9527254584008981]
+Training on Task 4
+acc: [1.0, 0.987009862881886, 0.9721439230641684, 0.9527254584008981, 0.9289]
+*** starting experiment for p = 0.1
+Training on Task 0
+acc: [1.0]
+Training on Task 1
+acc: [1.0, 0.9901371181140245]
+Training on Task 2
+acc: [1.0, 0.9901371181140245, 0.9791079422981264]
+Training on Task 3
+acc: [1.0, 0.9901371181140245, 0.9791079422981264, 0.9666957714855932]
+Training on Task 4
+acc: [1.0, 0.9901371181140245, 0.9791079422981264, 0.9666957714855932, 0.9466]
+*** starting experiment for p = 0.2
+Training on Task 0
+acc: [0.9995271867612293]
+Training on Task 1
+acc: [0.9995271867612293, 0.9937454895357228]
+Training on Task 2
+acc: [0.9995271867612293, 0.9937454895357228, 0.9817609020063007]
+Training on Task 3
+acc: [0.9995271867612293, 0.9937454895357228, 0.9817609020063007, 0.9734314581514282]
+Training on Task 4
+acc: [0.9995271867612293, 0.9937454895357228, 0.9817609020063007, 0.9734314581514282, 0.9572]
+*** starting experiment for p = 0.5
+Training on Task 0
+acc: [1.0]
+Training on Task 1
+acc: [1.0, 0.9942266057252827]
+Training on Task 2
+acc: [1.0, 0.9942266057252827, 0.9878958713314542]
+Training on Task 3
+acc: [1.0, 0.9942266057252827, 0.9878958713314542, 0.9789197954347013]
+Training on Task 4
+acc: [1.0, 0.9942266057252827, 0.9878958713314542, 0.9789197954347013, 0.9642]
