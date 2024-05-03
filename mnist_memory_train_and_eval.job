@@ -10,8 +10,6 @@
 #SBATCH -e logs/train_eval_%j.err
 export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:128
 source activate /n/home05/alanhsu/.conda/envs/continualLearning
-python /n/home05/alanhsu/workspace/research/continual_learning/main_batch.py --config /n/home05/alanhsu/workspace/research/continual_learning/configs/random/config_mnist_grad_eval.yaml
-python /n/home05/alanhsu/workspace/research/continual_learning/main_batch.py --config /n/home05/alanhsu/workspace/research/continual_learning/configs/random/config_mnist_train.yaml
 
 python /n/home05/alanhsu/workspace/research/continual_learning/main_batch.py --config /n/home05/alanhsu/workspace/research/continual_learning/configs/class_balanced/config_mnist_grad_eval.yaml
 python /n/home05/alanhsu/workspace/research/continual_learning/main_batch.py --config /n/home05/alanhsu/workspace/research/continual_learning/configs/class_balanced/config_mnist_train.yaml
