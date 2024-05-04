@@ -1,7 +1,0 @@
-Using CUDA
-Seed given in config, setting deterministic run
-*** starting experiment for p = 0.001
-Model load path given so loading model and not training
-If this is unintended behaviour, remove model_load_dir from config
-Files already downloaded and verified
-Files already downloaded and verified

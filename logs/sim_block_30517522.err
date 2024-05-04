@@ -1,4 +1,0 @@
-Traceback (most recent call last):
-  File "/n/home05/alanhsu/workspace/research/continual_learning/save_similarity_block.py", line 3, in <module>
-    import skimage
-ModuleNotFoundError: No module named 'skimage'

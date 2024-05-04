@@ -1,8 +1,0 @@
-Traceback (most recent call last):
-  File "/n/home05/alanhsu/workspace/research/continual_learning/main_batch.py", line 234, in <module>
-    with open(f"{args.config}", "r") as f:
-FileNotFoundError: [Errno 2] No such file or directory: 'configs/random/config_cifar_train.yaml'
-Traceback (most recent call last):
-  File "/n/home05/alanhsu/workspace/research/continual_learning/main_batch.py", line 234, in <module>
-    with open(f"{args.config}", "r") as f:
-FileNotFoundError: [Errno 2] No such file or directory: 'configs/random/config_cifar_grad_eval.yaml'
