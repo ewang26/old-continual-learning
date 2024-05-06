@@ -105,6 +105,31 @@ def compute_gradient_similarity(metric_list,
 
                 np.save(result_file_path, data_block)
 
+def save_downstream_acc(p_vals, dataset_name, memory_method_arr, num_tasks):
+    num_p = len(p_vals)
+
+    grad_sim_dir = 'gradient_similarity'
+    if not os.path.exists(grad_sim_dir): os.mkdir(grad_sim_dir)
+
+    dataset_save_dir = f'{grad_sim_dir}/{dataset_name}'
+    if not os.path.exists(dataset_save_dir): os.mkdir(dataset_save_dir)
+
+    # loop through memory methods
+    for memory_method in memory_method_arr:
+
+        mem_save_dir = f'{dataset_save_dir}/{memory_method}'
+        if not os.path.exists(mem_save_dir): os.mkdir(mem_save_dir)
+        result_file_path = f'{mem_save_dir}/acc_block.npy'
+
+        # we want to store all 5 task downstream acc for all p for this memory method
+        acc_block = np.zeros((num_p, num_tasks))
+        for p_index, p in enumerate(p_vals):
+            acc_block[p_index] = np.load(f'models/{dataset_name}/{memory_method}/{p}/train_0/acc.npy')
+
+        np.save(result_file_path, acc_block)
+        
+        
+
 
 def main(cd):
     metric_names = cd['metric_names']
@@ -135,7 +160,12 @@ def main(cd):
                                 num_tasks = num_tasks,
                                 num_ideal_models = num_ideal_models,
                                 num_runs = num_runs)
-
+    
+    # currently only saves acc for 1 downstream trained model (in the future we can store statistics on multiple models)
+    save_downstream_acc(p_vals = p_vals,
+                        dataset_name = dataset_name,
+                        memory_method_arr = memory_method_arr,
+                        num_tasks = num_tasks)
 
 
 if __name__ == '__main__':

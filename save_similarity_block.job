@@ -8,4 +8,4 @@
 #SBATCH -e logs/sim_block_%j.err
 
 source activate /n/home05/alanhsu/.conda/envs/continualLearning
-python /n/home05/alanhsu/workspace/research/continual_learning/save_similarity_block.py 
+python /n/home05/alanhsu/workspace/research/continual_learning/save_similarity_block_v2.py --config /n/home05/alanhsu/workspace/research/continual_learning/configs/grad_eval/mnist_rest.yaml 
