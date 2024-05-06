@@ -50,7 +50,7 @@ def get_grad_dist(metric_func,
                             weight_name = f'{model_layer_prefix}.{weight_type}.npy'
                             
                             p_grad_actual_arr = np.load(f'models/{exp_name}/{memory_method}/{p}/run_{run}/train_{ideal_index}/grad_task_{task_val}/{grad_type}_grad/{weight_name}')
-                            p_grad_ideal_arr =  np.load(f'models/{exp_name}/random/1/run_0/train_0/grad_task_{task_val}/{grad_type}_grad/{weight_name}')
+                            p_grad_ideal_arr =  np.load(f'models/{exp_name}/random/1/run_0/train_{ideal_index}/grad_task_{task_val}/{grad_type}_grad/{weight_name}')
 
                             data_tensor[p_index, run, ideal_index, task_idx, grad_index] = compare_gradients(p_grad_actual_arr, p_grad_ideal_arr, metric_func)
                             grad_index += 1
