@@ -149,17 +149,17 @@ def main(cd):
     num_ideal_models = cd['num_ideal_models']
     num_runs = cd['num_runs']
 
-    compute_gradient_similarity(metric_list = metric_list, 
-                                metric_names = metric_names,
-                                p_vals = p_vals, 
-                                model_weight_types = model_weight_types, 
-                                model_layer_names = model_layer_names,
-                                dataset_name = dataset_name, 
-                                grad_type_arr = grad_type_arr,
-                                memory_method_arr = memory_method_arr, 
-                                num_tasks = num_tasks,
-                                num_ideal_models = num_ideal_models,
-                                num_runs = num_runs)
+    #compute_gradient_similarity(metric_list = metric_list, 
+    #                            metric_names = metric_names,
+    #                            p_vals = p_vals, 
+    #                            model_weight_types = model_weight_types, 
+    #                            model_layer_names = model_layer_names,
+    #                            dataset_name = dataset_name, 
+    #                            grad_type_arr = grad_type_arr,
+    #                            memory_method_arr = memory_method_arr, 
+    #                            num_tasks = num_tasks,
+    #                            num_ideal_models = num_ideal_models,
+    #                            num_runs = num_runs)
     
     # currently only saves acc for 1 downstream trained model (in the future we can store statistics on multiple models)
     save_downstream_acc(p_vals = p_vals,
