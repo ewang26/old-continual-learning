@@ -14,7 +14,10 @@ def mse(actual, ideal):
 def cos_sim(actual, ideal):
     actual_flat, ideal_flat = actual.flatten(), ideal.flatten()
     dot = np.dot(actual_flat, ideal_flat)
-    return 0 if dot == 0 else dot / (np.linalg.norm(actual_flat) * np.linalg.norm(ideal_flat)) 
+    if (np.linalg.norm(actual_flat) == 0) or (np.linalg.norm(ideal_flat) == 0):
+        return 0
+    else:
+        return dot / (np.linalg.norm(actual_flat) * np.linalg.norm(ideal_flat)) 
 
 def compare_gradients(approx, ideal, metric_func):
     return metric_func(approx, ideal)
