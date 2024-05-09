@@ -17,7 +17,7 @@ python /n/home05/alanhsu/workspace/research/continual_learning/main_batch.py --c
 python /n/home05/alanhsu/workspace/research/continual_learning/main_batch.py --config /n/home05/alanhsu/workspace/research/continual_learning/configs/lambda/config_cifar10_grad_eval.yaml
 python /n/home05/alanhsu/workspace/research/continual_learning/main_batch.py --config /n/home05/alanhsu/workspace/research/continual_learning/configs/lambda/config_cifar10_train.yaml
 
-#python /n/home05/alanhsu/workspace/research/continual_learning/main_batch.py --config /n/home05/alanhsu/workspace/research/continual_learning/configs/GSS/config_cifar10_grad_eval.yaml
-#python /n/home05/alanhsu/workspace/research/continual_learning/main_batch.py --config /n/home05/alanhsu/workspace/research/continual_learning/configs/GSS/config_cifar10_train.yaml
+python /n/home05/alanhsu/workspace/research/continual_learning/main_batch.py --config /n/home05/alanhsu/workspace/research/continual_learning/configs/GSS/config_cifar10_grad_eval.yaml
+python /n/home05/alanhsu/workspace/research/continual_learning/main_batch.py --config /n/home05/alanhsu/workspace/research/continual_learning/configs/GSS/config_cifar10_train.yaml
 
-python /n/home05/alanhsu/workspace/research/continual_learning/save_similarity_block_v2.py --config /n/home05/alanhsu/workspace/research/continual_learning/configs/grad_eval/cifar10_random.yaml
+python /n/home05/alanhsu/workspace/research/continual_learning/save_similarity_block_v2.py --config /n/home05/alanhsu/workspace/research/continual_learning/configs/grad_eval/cifar10_rest.yaml

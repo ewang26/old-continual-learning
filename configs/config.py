@@ -60,7 +60,13 @@ class Config:
                 if val == "random":
                     setattr(self, key, RandomMemorySetManager)
                 elif val == "kmeans":
-                    setattr(self, key, KMeansMemorySetManager)
+                    if config_dict['learning_manager'] == 'mnist_split':
+                        setattr(self, key, KMeansMemorySetManager)
+                    elif config_dict['learning_manager'] == 'cifar10_split':
+                        setattr(self, key, KMeansCIFARMemorySetManager)
+                    else:
+                        print('is this method implemented for kmeans?')
+                        assert False
                 elif val == "lambda" or val == "Lambda":
                     setattr(self, key, LambdaMemorySetManager)
                 elif val == "GSS":
