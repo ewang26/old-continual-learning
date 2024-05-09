@@ -90,6 +90,9 @@ class KMeansMemorySetManager(MemorySetManager):
         n = x.shape[0]
         f = x.shape[1]
         memory_size = int(n * self.p)
+
+        if self.p == 1:
+            return x, y
         
         # Get unique classes
         classes = torch.unique(y).tolist()
