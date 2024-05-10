@@ -51,8 +51,8 @@ class Config:
             torch.manual_seed(random_seed)
             random.seed(random_seed)
             np.random.seed(random_seed)
-            torch.backends.cudnn.benchmark = False
-            torch.use_deterministic_algorithms(True)
+            #torch.backends.cudnn.benchmark = False
+            #torch.use_deterministic_algorithms(True)
 
         # Pass config into python
         for key, val in config_dict.items():

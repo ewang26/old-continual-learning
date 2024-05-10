@@ -30,7 +30,7 @@ else:
     print("Using CPU")
     DEVICE = torch.device("cpu")
 
-DEVICE = torch.device("cpu")
+#DEVICE = torch.device("cpu")
 
 
 def setup_wandb(config: Config):
