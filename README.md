@@ -39,7 +39,7 @@ python main_batch.py --config configs/random/config_mnist_grad_eval.yaml
 python main_batch.py --config configs/class_balanced/config_mnist_grad_eval.yaml
 python main_batch.py --config configs/GSS/config_mnist_grad_eval.yaml
 python main_batch.py --config configs/lambda/config_mnist_grad_eval.yaml
-python main_batch.py --config kmeans/config_mnist_grad_eval.yaml
+python main_batch.py --config configs/kmeans/config_mnist_grad_eval.yaml
 ```
 
 [4] This step can be done before or after step 3. Now, we will train downstream models using memory sets instead of the full dataset. For each memory selection method, we train with the train config file, but now with different p-values. In this example, we train 1 downstream model for each p-value.
@@ -51,7 +51,7 @@ python main_batch.py --config configs/random/config_mnist_train.yaml
 python main_batch.py --config configs/class_balanced/config_mnist_train.yaml
 python main_batch.py --config configs/GSS/config_mnist_train.yaml
 python main_batch.py --config configs/lambda/config_mnist_train.yaml
-python main_batch.py --config kmeans/config_mnist_train.yaml
+python main_batch.py --config configs/kmeans/config_mnist_train.yaml
 ```
 
 [5] Now that all the gradient values are saved, we can compute similarities between the ideal gradients (full dataset) with the reconstructed gradients (memory dataset). Note that the similairty evaluation is split into 2 calls, one for random and one for the rest of the memory methods. This is just for debugging purposes so we can run a full random pipeline first.
@@ -63,7 +63,14 @@ python save_similarity_block_v2.py --config configs/grad_eval/mnist_rest.yaml
 
 [6] All the gradient comparison data will be saved in `gradient_similarity/mnist_split/{memory_selection_method}/{metric_name}/`. The huge gradient data plot has the shape `(p_vals, num_runs, num_ideal_models, num_tasks, num_grad_layers)`. Specific for this example, the data block has shape `(10, 10, 10, 4, 4)`, since we compute past gradients for tasks 1-4, and there are 4 differnet gradient layers in the MLP.
 
-[7] After the gradient comparison is saved, the data block can then be used for plotting any statistical averages.
+[7] After the gradient comparison is saved, the data block can then be used for plotting any statistical averages. See `grad_similarity_plots_restructure.ipynb` for example plotting code. The plot generated from this notebook are saved in `gradient_similarity/mnist_split/plots/`
+
+[8] For running on the cluster, I've provided two .job files that first perform the pipeline on random (including the ideal model training), and then running the pipeline on the rest of the memory selection methods:
+
+```
+sbatch mnist_random_pipeline.job
+sbatch mnist_memory_train_and_eval.job
+```
 
 ### Config Files
 
