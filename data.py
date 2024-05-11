@@ -103,6 +103,9 @@ class KMeansMemorySetManager(MemorySetManager):
         n = x.shape[0]
         f = x.shape[1]
         memory_size = int(n * self.p)
+
+        if self.p == 1:
+            return x, y
         
         # Get unique classes
         classes = torch.unique(y).tolist()
@@ -170,6 +173,86 @@ class KMeansMemorySetManager(MemorySetManager):
         
         return memory_x_concat, memory_y_concat
     
+
+class KMeansCIFARMemorySetManager(MemorySetManager):
+    def __init__(self, p: float, num_centroids: int, device: torch.device, random_seed: int = 42):
+        self.p = p
+        self.num_centroids = num_centroids
+        self.device = device
+        self.random_seed = random_seed
+        torch.manual_seed(self.random_seed)
+        self.centroids = {}
+        self.cluster_counters = {}
+        self.memory_sets = {}
+        
+    def create_memory_set(self, x: Float[Tensor, "n c h w"], y: Float[Tensor, "n 1"]) -> Tuple[Float[Tensor, "m c h w"], Float[Tensor, "m 1"]]:
+        if self.p == 1:  # Check if p is set to 1
+            return x, y  # Return the entire dataset as the memory set
+        
+        n, c, h, w = x.shape
+        memory_size = int(n * self.p)
+        
+        # Get unique classes
+        classes = torch.unique(y).tolist()
+        num_classes = len(classes)
+        
+        # Calculate the memory size per class
+        memory_size_per_class = memory_size // num_classes
+        
+        # Initialize memory arrays for each class
+        memory_x = {}
+        memory_y = {}
+        memory_distances = {}
+        self.memory_set_indices = {}
+        
+        for class_label in classes:
+            memory_x[class_label] = torch.zeros((memory_size_per_class, c, h, w), device=self.device)
+            memory_y[class_label] = torch.zeros((memory_size_per_class, 1), dtype=torch.long, device=self.device)
+            memory_distances[class_label] = torch.full((memory_size_per_class,), float("inf"), device=self.device)
+            self.memory_set_indices[class_label] = torch.zeros(memory_size_per_class, dtype=torch.long, device=self.device)
+        
+        # Iterate over each class
+        for class_label in classes:
+            class_mask = (y == class_label).squeeze()
+            class_samples = x[class_mask]
+            class_labels = y[class_mask]
+            
+            if class_label not in self.centroids:
+                self.centroids[class_label] = torch.randn((self.num_centroids, c, h, w), device=self.device)
+                self.cluster_counters[class_label] = torch.zeros(self.num_centroids, device=self.device)
+            
+            # Iterate over the samples of the current class
+            for i in range(class_samples.shape[0]):
+                sample = class_samples[i].unsqueeze(0)  # Add batch dimension
+                # Compute distances using broadcasting, sum over spatial and channel dimensions
+                distances = torch.sqrt(torch.sum((self.centroids[class_label] - sample) ** 2, dim=[1, 2, 3]))
+                closest_centroid_idx = torch.argmin(distances).item()
+                
+                self.cluster_counters[class_label][closest_centroid_idx] += 1
+                # Update centroids with learning rate based on cluster size
+                learning_rate = 1 / self.cluster_counters[class_label][closest_centroid_idx]
+                self.centroids[class_label][closest_centroid_idx] *= (1 - learning_rate)
+                self.centroids[class_label][closest_centroid_idx] += learning_rate * sample.squeeze(0)
+                
+                distance = distances[closest_centroid_idx]
+                if i < memory_size_per_class:
+                    memory_x[class_label][i] = sample.squeeze(0)
+                    memory_y[class_label][i] = class_labels[i]
+                    memory_distances[class_label][i] = distance
+                    self.memory_set_indices[class_label][i] = i
+                else:
+                    max_idx = torch.argmax(memory_distances[class_label])
+                    if distance < memory_distances[class_label][max_idx]:
+                        memory_x[class_label][max_idx] = sample.squeeze(0)
+                        memory_y[class_label][max_idx] = class_labels[i]
+                        memory_distances[class_label][max_idx] = distance
+                        self.memory_set_indices[class_label][max_idx] = i
+        
+        # Concatenate memory sets from all classes
+        memory_x_concat = torch.cat(list(memory_x.values()), dim=0)
+        memory_y_concat = torch.cat(list(memory_y.values()), dim=0).view(-1, 1)
+        
+        return memory_x_concat, memory_y_concat
 
 # Jonathan Lambda Method
 class LambdaMemorySetManager(MemorySetManager):

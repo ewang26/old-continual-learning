@@ -20,4 +20,7 @@ python /n/home05/alanhsu/workspace/research/continual_learning/main_batch.py --c
 python /n/home05/alanhsu/workspace/research/continual_learning/main_batch.py --config /n/home05/alanhsu/workspace/research/continual_learning/configs/lambda/config_mnist_grad_eval.yaml
 python /n/home05/alanhsu/workspace/research/continual_learning/main_batch.py --config /n/home05/alanhsu/workspace/research/continual_learning/configs/lambda/config_mnist_train.yaml
 
-python /n/home05/alanhsu/workspace/research/continual_learning/save_similarity_block.py
+python /n/home05/alanhsu/workspace/research/continual_learning/main_batch.py --config /n/home05/alanhsu/workspace/research/continual_learning/configs/kmeans/config_mnist_grad_eval.yaml
+python /n/home05/alanhsu/workspace/research/continual_learning/main_batch.py --config /n/home05/alanhsu/workspace/research/continual_learning/configs/kmeans/config_mnist_train.yaml
+
+python /n/home05/alanhsu/workspace/research/continual_learning/save_similarity_block_v2.py --config /n/home05/alanhsu/workspace/research/continual_learning/configs/grad_eval/mnist_rest.yaml

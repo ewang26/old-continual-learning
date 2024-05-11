@@ -10,11 +10,11 @@
 #SBATCH -e logs/train_eval_%j.err
 export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:128
 source activate /n/home05/alanhsu/.conda/envs/continualLearning
-#python /n/home05/alanhsu/workspace/research/continual_learning/main_batch.py --config /n/home05/alanhsu/workspace/research/continual_learning/configs/cifar10_train_ideal_model.yaml
+python /n/home05/alanhsu/workspace/research/continual_learning/main_batch.py --config /n/home05/alanhsu/workspace/research/continual_learning/configs/cifar10_train_ideal_model.yaml
 
-#cp -r /n/home05/alanhsu/workspace/research/continual_learning/models/cifar10_split/random/1 /n/home05/alanhsu/workspace/research/continual_learning/models/cifar10_split/ideal_model
+cp -r /n/home05/alanhsu/workspace/research/continual_learning/models/cifar10_split/random/1 /n/home05/alanhsu/workspace/research/continual_learning/models/cifar10_split/ideal_model
 
-#python /n/home05/alanhsu/workspace/research/continual_learning/main_batch.py --config /n/home05/alanhsu/workspace/research/continual_learning/configs/random/config_cifar10_grad_eval.yaml
-#python /n/home05/alanhsu/workspace/research/continual_learning/main_batch.py --config /n/home05/alanhsu/workspace/research/continual_learning/configs/random/config_cifar10_train.yaml
+python /n/home05/alanhsu/workspace/research/continual_learning/main_batch.py --config /n/home05/alanhsu/workspace/research/continual_learning/configs/random/config_cifar10_grad_eval.yaml
+python /n/home05/alanhsu/workspace/research/continual_learning/main_batch.py --config /n/home05/alanhsu/workspace/research/continual_learning/configs/random/config_cifar10_train.yaml
 
 python /n/home05/alanhsu/workspace/research/continual_learning/save_similarity_block_v2.py --config /n/home05/alanhsu/workspace/research/continual_learning/configs/grad_eval/cifar10_random.yaml

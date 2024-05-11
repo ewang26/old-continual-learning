@@ -18,6 +18,22 @@ import yaml
 import argparse
 
 
+# Check for M1 Mac MPS (Apple Silicon GPU) support
+if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+    print("Using M1 Mac")
+    DEVICE = torch.device("mps")
+# Check for CUDA support (NVIDIA GPU)
+elif torch.cuda.is_available():
+    print("Using CUDA")
+    DEVICE = torch.device("cuda")
+# Default to CPU if neither is available
+else:
+    print("Using CPU")
+    DEVICE = torch.device("cpu")
+
+#DEVICE = torch.device("cpu")
+
+
 def setup_wandb(config: Config):
     run_name = config.run_name
     experiment_tag = getattr(config, "experiment_tag", None)
@@ -79,7 +95,7 @@ def main(config: Config):
                 memory_set_manager = config.memory_set_manager(
                     p,
                     num_centroids=config.num_centroids,
-                    device=config.device,
+                    device=DEVICE,
                     random_seed=random_seed
                 )
             elif config.memory_set_manager == LambdaMemorySetManager:

@@ -43,7 +43,7 @@ else:
     DEVICE = torch.device("cpu")
 
 
-DEVICE = torch.device("cpu")
+#DEVICE = torch.device("cpu")
 
 
 class ContinualLearningManager(ABC):
@@ -325,7 +325,7 @@ class ContinualLearningManager(ABC):
             #create label weights
             label_weights = np.ones(len(current_labels))
             label_weights[:-1] = 1/p
-            label_weights = torch.from_numpy(label_weights).float()
+            label_weights = torch.from_numpy(label_weights).float().to(DEVICE)
         else:
             # load data and labels
             train_dataloader, _ = self._get_task_dataloaders(
@@ -465,7 +465,7 @@ class ContinualLearningManager(ABC):
         if use_weights:
             label_weights = np.ones(len(current_labels))
             label_weights[:-1] = 1/p
-            label_weights = torch.from_numpy(label_weights).float()
+            label_weights = torch.from_numpy(label_weights).float().to(DEVICE)
             criterion = nn.CrossEntropyLoss(weight = label_weights)
         else:
             criterion = nn.CrossEntropyLoss()
@@ -498,6 +498,9 @@ class ContinualLearningManager(ABC):
                 outputs = outputs[
                     :, current_labels
                 ]  # Only select outputs for current labels
+
+                #print(outputs.get_device())
+                #print(batch_y.get_device())
                 loss = criterion(outputs, batch_y)
                 total_loss += loss.detach().cpu()
                 # Backward pass and optimize

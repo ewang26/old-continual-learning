@@ -14,7 +14,10 @@ def mse(actual, ideal):
 def cos_sim(actual, ideal):
     actual_flat, ideal_flat = actual.flatten(), ideal.flatten()
     dot = np.dot(actual_flat, ideal_flat)
-    return 0 if dot == 0 else dot / (np.linalg.norm(actual_flat) * np.linalg.norm(ideal_flat)) 
+    if (np.linalg.norm(actual_flat) == 0) or (np.linalg.norm(ideal_flat) == 0):
+        return 0
+    else:
+        return dot / (np.linalg.norm(actual_flat) * np.linalg.norm(ideal_flat)) 
 
 def compare_gradients(approx, ideal, metric_func):
     return metric_func(approx, ideal)
@@ -50,7 +53,7 @@ def get_grad_dist(metric_func,
                             weight_name = f'{model_layer_prefix}.{weight_type}.npy'
                             
                             p_grad_actual_arr = np.load(f'models/{exp_name}/{memory_method}/{p}/run_{run}/train_{ideal_index}/grad_task_{task_val}/{grad_type}_grad/{weight_name}')
-                            p_grad_ideal_arr =  np.load(f'models/{exp_name}/random/1/run_0/train_0/grad_task_{task_val}/{grad_type}_grad/{weight_name}')
+                            p_grad_ideal_arr =  np.load(f'models/{exp_name}/random/1/run_0/train_{ideal_index}/grad_task_{task_val}/{grad_type}_grad/{weight_name}')
 
                             data_tensor[p_index, run, ideal_index, task_idx, grad_index] = compare_gradients(p_grad_actual_arr, p_grad_ideal_arr, metric_func)
                             grad_index += 1
@@ -105,6 +108,31 @@ def compute_gradient_similarity(metric_list,
 
                 np.save(result_file_path, data_block)
 
+def save_downstream_acc(p_vals, dataset_name, memory_method_arr, num_tasks):
+    num_p = len(p_vals)
+
+    grad_sim_dir = 'gradient_similarity'
+    if not os.path.exists(grad_sim_dir): os.mkdir(grad_sim_dir)
+
+    dataset_save_dir = f'{grad_sim_dir}/{dataset_name}'
+    if not os.path.exists(dataset_save_dir): os.mkdir(dataset_save_dir)
+
+    # loop through memory methods
+    for memory_method in memory_method_arr:
+
+        mem_save_dir = f'{dataset_save_dir}/{memory_method}'
+        if not os.path.exists(mem_save_dir): os.mkdir(mem_save_dir)
+        result_file_path = f'{mem_save_dir}/acc_block.npy'
+
+        # we want to store all 5 task downstream acc for all p for this memory method
+        acc_block = np.zeros((num_p, num_tasks))
+        for p_index, p in enumerate(p_vals):
+            acc_block[p_index] = np.load(f'models/{dataset_name}/{memory_method}/{p}/train_0/acc.npy')
+
+        np.save(result_file_path, acc_block)
+        
+        
+
 
 def main(cd):
     metric_names = cd['metric_names']
@@ -125,17 +153,22 @@ def main(cd):
     num_runs = cd['num_runs']
 
     compute_gradient_similarity(metric_list = metric_list, 
-                                metric_names = metric_names,
-                                p_vals = p_vals, 
-                                model_weight_types = model_weight_types, 
-                                model_layer_names = model_layer_names,
-                                dataset_name = dataset_name, 
-                                grad_type_arr = grad_type_arr,
-                                memory_method_arr = memory_method_arr, 
-                                num_tasks = num_tasks,
-                                num_ideal_models = num_ideal_models,
-                                num_runs = num_runs)
-
+                               metric_names = metric_names,
+                               p_vals = p_vals, 
+                               model_weight_types = model_weight_types, 
+                               model_layer_names = model_layer_names,
+                               dataset_name = dataset_name, 
+                               grad_type_arr = grad_type_arr,
+                               memory_method_arr = memory_method_arr, 
+                               num_tasks = num_tasks,
+                               num_ideal_models = num_ideal_models,
+                               num_runs = num_runs)
+    
+    # currently only saves acc for 1 downstream trained model (in the future we can store statistics on multiple models)
+    save_downstream_acc(p_vals = p_vals,
+                        dataset_name = dataset_name,
+                        memory_method_arr = memory_method_arr,
+                        num_tasks = num_tasks)
 
 
 if __name__ == '__main__':

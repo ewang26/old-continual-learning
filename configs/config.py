@@ -52,8 +52,8 @@ class Config:
             torch.manual_seed(random_seed)
             random.seed(random_seed)
             np.random.seed(random_seed)
-            torch.backends.cudnn.benchmark = False
-            torch.use_deterministic_algorithms(True)
+            #torch.backends.cudnn.benchmark = False
+            #torch.use_deterministic_algorithms(True)
 
         # Pass config into python
         for key, val in config_dict.items():
@@ -61,7 +61,13 @@ class Config:
                 if val == "random":
                     setattr(self, key, RandomMemorySetManager)
                 elif val == "kmeans":
-                    setattr(self, key, KMeansMemorySetManager)
+                    if config_dict['learning_manager'] == 'mnist_split':
+                        setattr(self, key, KMeansMemorySetManager)
+                    elif config_dict['learning_manager'] == 'cifar10_split':
+                        setattr(self, key, KMeansCIFARMemorySetManager)
+                    else:
+                        print('is this method implemented for kmeans?')
+                        assert False
                 elif val == "lambda" or val == "Lambda":
                     setattr(self, key, LambdaMemorySetManager)
                 elif val == "GSS":

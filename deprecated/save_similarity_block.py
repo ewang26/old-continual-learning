@@ -129,8 +129,6 @@ def main():
                                 num_ideal_models = num_ideal_models,
                                 num_runs = num_runs)
 
-
-
 if __name__ == '__main__':
     main()
 
