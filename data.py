@@ -578,47 +578,14 @@ class iCaRLNet(nn.Module):
         dists = (feature - means).pow(2).sum(1).squeeze()
         _, preds = dists.min(1)
         return preds
-        
-
-    # def construct_exemplar_set(self, images, m, transform):
-    #     """Construct an exemplar set for image set
-
-    #     Args:
-    #         images: np.array containing images of a class
-    #     """
-    #     features = []
-
-    #     from torchvision.transforms import ToPILImage
-
-    #     # Create an instance of the ToPILImage transform
-    #     to_pil_image = ToPILImage()
-
-    #     for img in images:
-    #         x = Variable(transform(Image.fromarray(img)), volatile=True).cuda()
-    #         feature = self.feature_extractor(x.unsqueeze(0)).data.cpu().numpy()
-    #         feature = feature / np.linalg.norm(feature) 
-    #         features.append(feature[0])
 
 
     def construct_exemplar_set(self, images, m, transform):
         """Construct an exemplar set for image set
 
         Args:
-            images: np.array containing images of a class
+            images: torch tensor containing images of a class
         """
-        # Compute and cache features for each example
-        # features = []
-        # with torch.no_grad():  # Use torch.no_grad to avoid tracking gradients
-        #     for img in images:
-        #         # Ensure img is a NumPy array and convert it to PIL Image
-        #         img_pil = Image.fromarray(img)
-        #         # Apply transformation and add a batch dimension
-        #         img_tensor = transform(img_pil).unsqueeze(0).to('cuda')  # Assuming using CUDA
-
-        #         # Extract features
-        #         feature = self.feature_extractor(img_tensor).cpu().numpy()
-        #         feature = feature / np.linalg.norm(feature)  # Normalize
-        #         features.append(feature[0])
 
         features = []
         with torch.no_grad():  # Ensures no gradients are calculated
@@ -729,20 +696,17 @@ class iCaRLNet(nn.Module):
                 images, labels = images.to(all_xs.device), labels.to(all_xs.device)
                 optimizer.zero_grad()
 
-                # forward pass
                 g = self.forward(images)
 
                 # classification loss for new classes
                 loss = self.cls_loss(g, labels)
-
-                # add distillation loss for old classes
+                # distillation loss for old classes
                 if self.n_known > 0:
                     g = torch.sigmoid(g)
                     q_i = q[idx]
                     dist_loss = sum(self.dist_loss(g[:, y], q_i[:, y]) for y in range(self.n_known))
                     loss += dist_loss
 
-                # Backward pass and optimization
                 loss.backward()
                 optimizer.step()
 
