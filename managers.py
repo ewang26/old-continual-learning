@@ -846,6 +846,7 @@ class ContinualLearningManager(ABC):
     
     def _get_terminal_task_dataloader(self, batch: int = 1, full_batch=False) -> Tuple[DataLoader, DataLoader]:
         """Collect the datasets of all tasks < task_index and return it as a dataloader.
+        Note: apparently this is NOT what this function does
 
         Args:
             use_memory_set: Whether to use the memory set for tasks < task_index.
