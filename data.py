@@ -13,6 +13,19 @@ from sklearn.cluster import KMeans
 
 import numpy as np
 
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+from torch.autograd import Variable
+from PIL import Image
+from torchvision.transforms.functional import to_tensor
+
+from torchvision.models import resnet18
+import torchvision.transforms as transforms
+
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
+
 
 class MemorySetManager(ABC):
     @abstractmethod
@@ -396,3 +409,286 @@ class ClassBalancedReservoirSampling:
             self.update_memory_set(x[i], y[i])
 
         return self.memory_x, self.memory_y        
+
+
+
+# Hyper Parameters
+# num_epochs = 50
+
+num_epochs = 2
+batch_size = 2
+learning_rate = 0.002
+
+class iCaRLNet(nn.Module):
+    def __init__(self, feature_size, n_classes):
+        # Network architecture
+        super(iCaRLNet, self).__init__()
+        self.feature_extractor = resnet18(pretrained=True)
+        self.feature_extractor.fc = nn.Linear(self.feature_extractor.fc.in_features, feature_size)
+        self.bn = nn.BatchNorm1d(feature_size, momentum=0.01)
+        self.ReLU = nn.ReLU()
+        self.fc = nn.Linear(feature_size, n_classes, bias=False)
+
+        self.n_classes = n_classes
+        self.n_known = 0
+
+        # list containing exemplar_sets
+        # each exemplar_set is a np.array of N images
+        # with shape (N, C, H, W)
+        self.exemplar_sets = []
+        self.exemplar_labels = []
+        # self.total_data = [[x, y] for x, y in zip(self.exemplar_sets, self.exemplar_labels)]
+        self.total_data = []
+
+        # Learning method
+        self.cls_loss = nn.CrossEntropyLoss()
+        self.dist_loss = nn.BCELoss()
+        self.optimizer = optim.Adam(self.parameters(), lr=learning_rate,
+                                    weight_decay=0.00001)
+        #self.optimizer = optim.SGD(self.parameters(), lr=2.0,
+        #                           weight_decay=0.00001)
+
+        # Means of exemplars
+        self.compute_means = True
+        self.exemplar_means = []
+
+    def forward(self, x):
+        # print(f"x shape is {x.shape}")
+        if x.dim() == 2:
+            # x = x.unsqueeze(1) 
+            x = x.unsqueeze(0).unsqueeze(0)  # add batch dimension and channel dimension, now (1, 1, height, width)
+
+        x = self.feature_extractor(x)
+        x = self.bn(x)
+        x = self.ReLU(x)
+        x = self.fc(x)
+        return x
+
+    def increment_classes(self, n):
+        """Add n classes in the final fc layer"""
+        in_features = self.fc.in_features
+        out_features = self.fc.out_features
+        weight = self.fc.weight.data
+
+        self.fc = nn.Linear(in_features, out_features+n, bias=False)
+        self.fc.weight.data[:out_features] = weight
+        self.n_classes += n
+
+    def classify(self, x, transform):
+        batch_size = x.size(0)
+        if self.compute_means:
+            exemplar_means = []
+            with torch.no_grad():
+                for P_y in self.exemplar_sets:
+                    features = [self.feature_extractor(transform(Image.fromarray(ex)).unsqueeze(0)).squeeze().detach() / self.feature_extractor(transform(Image.fromarray(ex)).unsqueeze(0)).squeeze().detach().norm() for ex in P_y]
+                    mu_y = torch.stack(features).mean(0).squeeze() / torch.stack(features).mean(0).squeeze().norm()
+                    exemplar_means.append(mu_y)
+            self.exemplar_means = exemplar_means
+            self.compute_means = False
+            print("Done")
+
+        exemplar_means = torch.stack(self.exemplar_means)
+        means = torch.stack([exemplar_means] * batch_size)
+        means = means.transpose(1, 2)
+        feature = self.feature_extractor(x)
+        feature = feature.unsqueeze(2).expand_as(means)
+        dists = (feature - means).pow(2).sum(1).squeeze()
+        _, preds = dists.min(1)
+        return preds
+        
+
+    # def construct_exemplar_set(self, images, m, transform):
+    #     """Construct an exemplar set for image set
+
+    #     Args:
+    #         images: np.array containing images of a class
+    #     """
+    #     features = []
+
+    #     from torchvision.transforms import ToPILImage
+
+    #     # Create an instance of the ToPILImage transform
+    #     to_pil_image = ToPILImage()
+
+    #     for img in images:
+    #         x = Variable(transform(Image.fromarray(img)), volatile=True).cuda()
+    #         feature = self.feature_extractor(x.unsqueeze(0)).data.cpu().numpy()
+    #         feature = feature / np.linalg.norm(feature) 
+    #         features.append(feature[0])
+
+
+    def construct_exemplar_set(self, images, m, transform):
+        """Construct an exemplar set for image set
+
+        Args:
+            images: np.array containing images of a class
+        """
+        # Compute and cache features for each example
+        # features = []
+        # with torch.no_grad():  # Use torch.no_grad to avoid tracking gradients
+        #     for img in images:
+        #         # Ensure img is a NumPy array and convert it to PIL Image
+        #         img_pil = Image.fromarray(img)
+        #         # Apply transformation and add a batch dimension
+        #         img_tensor = transform(img_pil).unsqueeze(0).to('cuda')  # Assuming using CUDA
+
+        #         # Extract features
+        #         feature = self.feature_extractor(img_tensor).cpu().numpy()
+        #         feature = feature / np.linalg.norm(feature)  # Normalize
+        #         features.append(feature[0])
+
+        features = []
+        with torch.no_grad():  # Ensures no gradients are calculated
+            for img in images:
+                if img.dim() == 3:  # Check if the channel dimension is missing
+                    img = img.unsqueeze(0)  # Add a batch dimension if it's a single image
+                # img = img.to('cuda')  # Move to GPU if available
+                img = img.to('cuda' if torch.cuda.is_available() else 'cpu')
+                img = transform(img)  # Apply transformation
+
+                # Extract features
+                feature = self.feature_extractor(img).cpu().numpy()
+                feature = feature / np.linalg.norm(feature)  # Normalize
+                features.append(feature[0])
+
+        features = np.array(features)
+        class_mean = np.mean(features, axis=0)
+        class_mean = class_mean / np.linalg.norm(class_mean) # normalize
+
+        exemplar_set = []
+        exemplar_features = [] # list of Variables of shape (feature_size,)
+        for k in range(m):
+            S = np.sum(exemplar_features, axis=0)
+            phi = features
+            mu = class_mean
+            mu_p = 1.0/(k+1) * (phi + S)
+            mu_p = mu_p / np.linalg.norm(mu_p)
+            i = np.argmin(np.sqrt(np.sum((mu - mu_p) ** 2, axis=1)))
+
+            exemplar_set.append(images[i])
+            exemplar_features.append(features[i])
+            """
+            #features = np.delete(features, i, axis=0)
+            """
+        
+        self.exemplar_sets.append(np.array(exemplar_set))
+                
+
+    def reduce_exemplar_sets(self, m):
+        for y, P_y in enumerate(self.exemplar_sets):
+            self.exemplar_sets[y] = P_y[:m]
+
+
+    def combine_dataset_with_exemplars(self):
+        for y, P_y in enumerate(self.exemplar_sets):
+            self.total_data = [[x, y] for x, y in zip(self.exemplar_sets, self.exemplar_labels)]
+
+        # for y, P_y in enumerate(self.exemplar_sets):
+        #     exemplar_images = P_y
+        #     exemplar_labels = [y] * len(P_y)
+        #     dataset.append(exemplar_images, exemplar_labels)
+
+
+    def update_representation(self, x, y):
+        """Update the network representation using a tensor of images (x) and their corresponding labels (y)."""
+        self.compute_means = True
+        x, y = x.to(torch.device('cuda' if torch.cuda.is_available() else 'cpu')), y.to(torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
+
+        # Identify and increment classes
+        unique_classes = set(y.cpu().numpy().tolist())
+        new_classes = [cls for cls in unique_classes if cls >= self.n_classes]
+        self.increment_classes(len(new_classes))
+        self.to(torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
+        print(f"{len(new_classes)} new classes.")
+
+        self.combine_dataset_with_exemplars()
+        # print(f"x shape during update is {x.shape}")
+        if self.total_data:
+            exemplar_xs, exemplar_ys = zip(*self.total_data)
+            # ensure all elements are tensors
+            exemplar_xs = [torch.tensor(item, dtype=x.dtype, device=x.device) if not isinstance(item, torch.Tensor) else item for item in exemplar_xs]
+            exemplar_ys = [torch.tensor(item, dtype=y.dtype, device=y.device) if not isinstance(item, torch.Tensor) else item for item in exemplar_ys]
+            # stack tensors to maintain consistent dimensions for concatenation
+            exemplar_xs = torch.stack(exemplar_xs)
+            exemplar_ys = torch.stack(exemplar_ys)
+        else:
+            print("else is true")
+            # initialize exemplar_xs and exemplar_ys as empty 2D tensors matching the dimension of x and y
+            exemplar_xs = torch.empty((0, *x.shape[1:]), dtype=x.dtype, device=x.device)
+            exemplar_ys = torch.empty((0, *y.shape[1:]), dtype=y.dtype, device=y.device)
+
+        # concatenate tensors
+        all_ys = torch.cat([exemplar_ys, y], dim=0)
+        print(f"exemplar shape is {exemplar_xs.shape}, x shape during update is {x.shape}")
+        all_xs = torch.cat([exemplar_xs, x], dim=0)
+        print(f"all x data (including exemplars) has shape {all_xs.shape}")
+
+        combined_dataset = torch.utils.data.TensorDataset(all_xs, all_ys)
+        loader = torch.utils.data.DataLoader(combined_dataset, batch_size=batch_size, shuffle=True, num_workers=2)
+
+        # store network outputs with pre-update parameters
+        q = torch.zeros(len(combined_dataset), self.n_classes, device=all_xs.device)
+        with torch.no_grad():
+            for idx, (images, labels) in enumerate(loader):
+                g = torch.sigmoid(self.forward(images))
+
+                start_index = idx * loader.batch_size
+                end_index = start_index + images.size(0)
+                q[start_index:end_index] = g.data
+
+
+        optimizer = self.optimizer
+
+        # network training
+        for epoch in range(num_epochs):
+            print(f"epoch is {epoch}")
+            for idx, (images, labels) in enumerate(loader):
+                images, labels = images.to(all_xs.device), labels.to(all_xs.device)
+                optimizer.zero_grad()
+
+                # forward pass
+                g = self.forward(images)
+
+                # classification loss for new classes
+                loss = self.cls_loss(g, labels)
+
+                # add distillation loss for old classes
+                if self.n_known > 0:
+                    g = torch.sigmoid(g)
+                    q_i = q[idx]
+                    dist_loss = sum(self.dist_loss(g[:, y], q_i[:, y]) for y in range(self.n_known))
+                    loss += dist_loss
+
+                # Backward pass and optimization
+                loss.backward()
+                optimizer.step()
+
+class iCaRL(MemorySetManager):
+    def __init__(self,  p: float, n_classes: int, random_seed: int = 42):
+
+        self.net = iCaRLNet(2048, 1) # create the iCaRLNet neural net object
+
+        self.p = p
+        self.random_seed = random_seed
+        self.generator = torch.Generator().manual_seed(random_seed)
+        self.memory_set_size = 0
+
+    def create_memory_set(self, x, y):
+        """ Create or update memory set for new tasks """
+        print(f"x.shape is {x.shape}, y.shape is {y.shape}")
+
+        transform_test = transforms.Compose([
+        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))])
+
+        memory_set_size = self.p * len(x)
+        print(f"memory set size is {memory_set_size}")
+        self.net.update_representation(x, y)  # update the model with new data
+
+        print("updated memory sets")
+
+        self.net.construct_exemplar_set(x, memory_set_size, transform_test)  # update the exemplar set for the new class
+
+        print("constructed the new memory set")
+        
+        return self.net.exemplar_sets, self.net.exemplar_labels # should return the images and their corresponding labels
+=
