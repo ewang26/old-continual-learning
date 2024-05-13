@@ -66,6 +66,7 @@ class RandomMemorySetManager(MemorySetManager):
         memory_x = x[memory_set_indices]
         memory_y = y[memory_set_indices]
 
+        print(f"Shape of memory set is: {memory_x.shape}") # erik was just debugging some stuff
         return memory_x, memory_y
 
 #THEODORA K-MEANS
@@ -695,7 +696,7 @@ class iCaRLNet(nn.Module):
             # all_xs = torch.cat([exemplar_xs, x], dim=0) # I think it should actually be this?
             # all_ys = torch.cat([exemplar_ys, y], dim=0)
 
-        print(f"all x data (including exemplars) has shape {all_xs.shape}")
+        print(f"all x data (including exemplars) after concatenation has shape {all_xs.shape}")
 
         combined_dataset = torch.utils.data.TensorDataset(all_xs, all_ys)
         loader = torch.utils.data.DataLoader(combined_dataset, batch_size=batch_size, shuffle=True)
@@ -758,8 +759,10 @@ class iCaRL(MemorySetManager):
         print("updated memory sets")
 
         self.net.construct_exemplar_set(x, y, memory_set_size, transform_test)  # update the exemplar set for the new class
-
+        # print(f"shape of memory set after construction is: {np.array(self.net.exemplar_sets).shape}")
+        print(f"shape of memory set after construction is: {torch.tensor(self.net.exemplar_sets[-1]).shape}")
         print("constructed the new memory set")
         
         return self.net.exemplar_sets[-1], self.net.exemplar_labels[-1] # should return the last image set in the memory set
+        # does I need to return a tensor?
         ## and their corresponding labels
