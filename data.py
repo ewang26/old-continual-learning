@@ -1,4 +1,3 @@
-#data.py
 from abc import ABC, abstractmethod
 from typing import List, Tuple, Optional, Type, Set
 
@@ -25,6 +24,8 @@ import torchvision.transforms as transforms
 
 import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
+
+DEVICE = torch.device("mps") # change this before cluster!
 
 
 class MemorySetManager(ABC):
@@ -74,7 +75,7 @@ class KMeansMemorySetManager(MemorySetManager):
         Args:
             p: The percentage of samples to retain in the memory set.
             num_centroids: The number of centroids to use for K-Means clustering.
-            device: The device to use for computations (e.g., torch.device("cuda")).
+            device: use mps
             random_seed: The random seed for reproducibility.
         """
         self.p = p
@@ -499,7 +500,7 @@ class ClassBalancedReservoirSampling:
 # num_epochs = 50
 
 num_epochs = 2
-batch_size = 2
+batch_size = 100
 learning_rate = 0.002
 
 class iCaRLNet(nn.Module):
@@ -580,7 +581,7 @@ class iCaRLNet(nn.Module):
         return preds
 
 
-    def construct_exemplar_set(self, images, m, transform):
+    def construct_exemplar_set(self, images, labels, m, transform):
         """Construct an exemplar set for image set
 
         Args:
@@ -588,12 +589,14 @@ class iCaRLNet(nn.Module):
         """
 
         features = []
+        self.feature_extractor.eval()
         with torch.no_grad():  # Ensures no gradients are calculated
+            # for i, img in enumerate(images):
             for img in images:
+
                 if img.dim() == 3:  # Check if the channel dimension is missing
                     img = img.unsqueeze(0)  # Add a batch dimension if it's a single image
-                # img = img.to('cuda')  # Move to GPU if available
-                img = img.to('cuda' if torch.cuda.is_available() else 'cpu')
+                img = img.to(DEVICE)
                 img = transform(img)  # Apply transformation
 
                 # Extract features
@@ -606,6 +609,7 @@ class iCaRLNet(nn.Module):
         class_mean = class_mean / np.linalg.norm(class_mean) # normalize
 
         exemplar_set = []
+        exemplar_label = []
         exemplar_features = [] # list of Variables of shape (feature_size,)
         for k in range(m):
             S = np.sum(exemplar_features, axis=0)
@@ -617,11 +621,13 @@ class iCaRLNet(nn.Module):
 
             exemplar_set.append(images[i])
             exemplar_features.append(features[i])
+            exemplar_label.append(labels[i])
             """
             #features = np.delete(features, i, axis=0)
             """
         
-        self.exemplar_sets.append(np.array(exemplar_set))
+        self.exemplar_labels.append(np.array(exemplar_label))
+        self.exemplar_sets.append(np.array(exemplar_set)) # this is exemplar_sets, not the exemplar_set being constructed here
                 
 
     def reduce_exemplar_sets(self, m):
@@ -642,18 +648,19 @@ class iCaRLNet(nn.Module):
     def update_representation(self, x, y):
         """Update the network representation using a tensor of images (x) and their corresponding labels (y)."""
         self.compute_means = True
-        x, y = x.to(torch.device('cuda' if torch.cuda.is_available() else 'cpu')), y.to(torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
+        x, y = x.to(DEVICE), y.to(DEVICE)
 
         # Identify and increment classes
         unique_classes = set(y.cpu().numpy().tolist())
         new_classes = [cls for cls in unique_classes if cls >= self.n_classes]
         self.increment_classes(len(new_classes))
-        self.to(torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
+        self.to(DEVICE)
         print(f"{len(new_classes)} new classes.")
 
         self.combine_dataset_with_exemplars()
         # print(f"x shape during update is {x.shape}")
         if self.total_data:
+            print("if is true")
             exemplar_xs, exemplar_ys = zip(*self.total_data)
             # ensure all elements are tensors
             exemplar_xs = [torch.tensor(item, dtype=x.dtype, device=x.device) if not isinstance(item, torch.Tensor) else item for item in exemplar_xs]
@@ -666,18 +673,35 @@ class iCaRLNet(nn.Module):
             # initialize exemplar_xs and exemplar_ys as empty 2D tensors matching the dimension of x and y
             exemplar_xs = torch.empty((0, *x.shape[1:]), dtype=x.dtype, device=x.device)
             exemplar_ys = torch.empty((0, *y.shape[1:]), dtype=y.dtype, device=y.device)
+            
 
         # concatenate tensors
-        all_ys = torch.cat([exemplar_ys, y], dim=0)
-        print(f"exemplar shape is {exemplar_xs.shape}, x shape during update is {x.shape}")
-        all_xs = torch.cat([exemplar_xs, x], dim=0)
+        print(f"exemplar_xs shape is {exemplar_xs.shape}, x shape is {x.shape}")
+        print(f"exemplar_ys shape is {exemplar_ys.shape}, y shape during update is {y.shape}")
+
+        if exemplar_xs.size(0) == 0 and exemplar_ys.size(0) == 0:
+
+            print("exemplar start is empty (starting)")
+            all_ys = torch.cat([exemplar_ys, y], dim=0)
+            all_xs = torch.cat([exemplar_xs, x], dim=0) 
+        else:
+            print(f"exemplar set is not empty; it has size {exemplar_xs.shape}")
+            num_images = exemplar_xs.size(0) * exemplar_xs.size(1) # the total number of images
+            num_labels = exemplar_ys.size(0) * exemplar_ys.size(1)
+
+            all_xs = torch.cat([exemplar_xs.reshape(num_images, 3, 32, 32), x], dim=0)
+            all_ys = torch.cat([exemplar_ys.reshape(num_labels), y], dim=0)
+
+            # all_xs = torch.cat([exemplar_xs, x], dim=0) # I think it should actually be this?
+            # all_ys = torch.cat([exemplar_ys, y], dim=0)
+
         print(f"all x data (including exemplars) has shape {all_xs.shape}")
 
         combined_dataset = torch.utils.data.TensorDataset(all_xs, all_ys)
-        loader = torch.utils.data.DataLoader(combined_dataset, batch_size=batch_size, shuffle=True, num_workers=2)
+        loader = torch.utils.data.DataLoader(combined_dataset, batch_size=batch_size, shuffle=True)
 
         # store network outputs with pre-update parameters
-        q = torch.zeros(len(combined_dataset), self.n_classes, device=all_xs.device)
+        q = torch.zeros(len(combined_dataset), self.n_classes)
         with torch.no_grad():
             for idx, (images, labels) in enumerate(loader):
                 g = torch.sigmoid(self.forward(images))
@@ -693,7 +717,7 @@ class iCaRLNet(nn.Module):
         for epoch in range(num_epochs):
             print(f"epoch is {epoch}")
             for idx, (images, labels) in enumerate(loader):
-                images, labels = images.to(all_xs.device), labels.to(all_xs.device)
+                images, labels = images.to(DEVICE), labels.to(DEVICE)
                 optimizer.zero_grad()
 
                 g = self.forward(images)
@@ -722,20 +746,20 @@ class iCaRL(MemorySetManager):
 
     def create_memory_set(self, x, y):
         """ Create or update memory set for new tasks """
-        print(f"x.shape is {x.shape}, y.shape is {y.shape}")
+        print(f"x.shape of incoming task data is {x.shape}, y.shape is {y.shape}")
 
         transform_test = transforms.Compose([
-        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))])
+        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
-        memory_set_size = self.p * len(x)
+        memory_set_size = int(self.p * len(x))
         print(f"memory set size is {memory_set_size}")
         self.net.update_representation(x, y)  # update the model with new data
 
         print("updated memory sets")
 
-        self.net.construct_exemplar_set(x, memory_set_size, transform_test)  # update the exemplar set for the new class
+        self.net.construct_exemplar_set(x, y, memory_set_size, transform_test)  # update the exemplar set for the new class
 
         print("constructed the new memory set")
         
-        return self.net.exemplar_sets, self.net.exemplar_labels # should return the images and their corresponding labels
-=
+        return self.net.exemplar_sets[-1], self.net.exemplar_labels[-1] # should return the last image set in the memory set
+        ## and their corresponding labels
