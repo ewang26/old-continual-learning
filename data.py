@@ -514,6 +514,9 @@ class iCaRLNet(nn.Module):
         self.ReLU = nn.ReLU()
         self.fc = nn.Linear(feature_size, n_classes, bias=False)
 
+        self.grayscale_to_rgb = transforms.Compose([transforms.Lambda(lambda x: torch.cat([x, x, x], dim=1))])
+
+
         self.n_classes = n_classes
         self.n_known = 0
 
@@ -539,10 +542,11 @@ class iCaRLNet(nn.Module):
 
     def forward(self, x):
         # print(f"x shape is {x.shape}")
-        if x.dim() == 2:
-            # x = x.unsqueeze(1) 
-            x = x.unsqueeze(0).unsqueeze(0)  # add batch dimension and channel dimension, now (1, 1, height, width)
-
+        # if x.dim() == 2:
+        #     # x = x.unsqueeze(1) 
+        #     # x = x.unsqueeze(0).unsqueeze(0)  # add batch dimension and channel dimension, now (1, 1, height, width)
+        #     x = x.view(-1, 1, 28, 28)
+        print(f"during forward, x shape is: {x.shape}")
         x = self.feature_extractor(x)
         x = self.bn(x)
         x = self.ReLU(x)
@@ -594,10 +598,14 @@ class iCaRLNet(nn.Module):
         with torch.no_grad():  # Ensures no gradients are calculated
             # for i, img in enumerate(images):
             for img in images:
-
+                
                 if img.dim() == 3:  # Check if the channel dimension is missing
                     img = img.unsqueeze(0)  # Add a batch dimension if it's a single image
                 img = img.to(DEVICE)
+                
+                if img.size(1) == 1:
+                    img = self.grayscale_to_rgb(img)
+
                 img = transform(img)  # Apply transformation
 
                 # Extract features
@@ -705,10 +713,24 @@ class iCaRLNet(nn.Module):
         q = torch.zeros(len(combined_dataset), self.n_classes)
         with torch.no_grad():
             for idx, (images, labels) in enumerate(loader):
+
+
+                print(f"before transform shape is {images.shape} and dim is {images.dim()}")
+                if images.dim() == 2:
+                    # x = x.unsqueeze(1) 
+                    # x = x.unsqueeze(0).unsqueeze(0)  # add batch dimension and channel dimension, now (1, 1, height, width)
+                    images = x.view(-1, 1, 28, 28)
+                    images = self.grayscale_to_rgb(images)
+
+                # if images.size(1) == 1:
+                #     images = self.grayscale_to_rgb(images)
+                print(f"after transform: {images.shape}")
                 g = torch.sigmoid(self.forward(images))
 
                 start_index = idx * loader.batch_size
                 end_index = start_index + images.size(0)
+                print(f"start_index {start_index}, end index {end_index}")
+                print(f"g.data has size {g.data.size()}")
                 q[start_index:end_index] = g.data
 
 
