@@ -763,6 +763,7 @@ class iCaRL(MemorySetManager):
         print(f"shape of memory set after construction is: {torch.tensor(self.net.exemplar_sets[-1]).shape}")
         print("constructed the new memory set")
         
-        return self.net.exemplar_sets[-1], self.net.exemplar_labels[-1] # should return the last image set in the memory set
+        return torch.tensor(self.net.exemplar_sets[-1]), torch.tensor(self.net.exemplar_labels[-1])
+        # return self.net.exemplar_sets[-1], self.net.exemplar_labels[-1] # should return the last image set in the memory set
         # does I need to return a tensor?
         ## and their corresponding labels
