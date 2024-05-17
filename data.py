@@ -25,7 +25,20 @@ import torchvision.transforms as transforms
 import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
 
-DEVICE = torch.device("mps") # change this before cluster!
+# Check for M1 Mac MPS (Apple Silicon GPU) support
+if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+    print("Using M1 Mac")
+    DEVICE = torch.device("mps")
+# Check for CUDA support (NVIDIA GPU)
+elif torch.cuda.is_available():
+    print("Using CUDA")
+    DEVICE = torch.device("cuda")
+# Default to CPU if neither is available
+else:
+    print("Using CPU")
+    DEVICE = torch.device("cpu")
+
+# DEVICE = torch.device("mps") # change this before cluster!
 
 
 class MemorySetManager(ABC):
@@ -76,7 +89,7 @@ class KMeansMemorySetManager(MemorySetManager):
         Args:
             p: The percentage of samples to retain in the memory set.
             num_centroids: The number of centroids to use for K-Means clustering.
-            device: use mps
+            device: use device
             random_seed: The random seed for reproducibility.
         """
         self.p = p
@@ -594,7 +607,7 @@ class iCaRLNet(nn.Module):
             # for i, img in enumerate(images):
             for img in images:
                 
-                print(f"before checking image dim: {img.shape}")
+                # print(f"before checking image dim: {img.shape}")
                 if img.dim() == 3:  # Check if the channel dimension is missing
                     img = img.unsqueeze(0)  # Add a batch dimension if it's a single image
                 img = img.to(DEVICE)
@@ -603,7 +616,7 @@ class iCaRLNet(nn.Module):
                     img = img.view(1, 28, 28) # add the color channel and reshape
                     img = self.grayscale_to_rgb(img)
 
-                print(f"img dimension is: {img.shape}")
+                # print(f"img dimension is: {img.shape}")
                 img = transform(img)  # Apply transformation
 
                 # Extract features
