@@ -14,7 +14,7 @@ use_random_img: False
 num_ideal_models: None
 
 p_arr: [1]
-num_samples: [2]
+num_samples: [10]
 
 #debugging 
 train_debug: False

@@ -8,12 +8,10 @@ from pathlib import Path
 from itertools import zip_longest
 import os
 import csv
-
 import wandb
 import torch
 import random
 import numpy as np
-
 import yaml
 import argparse
 
@@ -32,7 +30,6 @@ else:
     DEVICE = torch.device("cpu")
 
 #DEVICE = torch.device("cpu")
-
 
 def setup_wandb(config: Config):
     run_name = config.run_name
