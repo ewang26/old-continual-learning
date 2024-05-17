@@ -89,7 +89,7 @@ class RandomMemorySetManager(MemorySetManager):
 #         Args:
 #             p: The percentage of samples to retain in the memory set.
 #             num_centroids: The number of centroids to use for K-Means clustering.
-#             device: use device
+#             device: The device to use for computations (e.g., torch.device("cuda")).
 #             random_seed: The random seed for reproducibility.
 #         """
 #         self.p = p
@@ -115,12 +115,10 @@ class RandomMemorySetManager(MemorySetManager):
 #         Returns:
 #             (memory_x, memory_y) tuple, where memory_x and memory_y are tensors.
 #         """
+#         device = x.device
 #         n = x.shape[0]
 #         f = x.shape[1]
 #         memory_size = int(n * self.p)
-
-#         if self.p == 1:
-#             return x, y
         
 #         # Get unique classes
 #         classes = torch.unique(y).tolist()
@@ -136,10 +134,10 @@ class RandomMemorySetManager(MemorySetManager):
 #         self.memory_set_indices = {}
         
 #         for class_label in classes:
-#             memory_x[class_label] = torch.zeros(memory_size_per_class, f).to(self.device)
-#             memory_y[class_label] = torch.zeros(memory_size_per_class, 1, dtype=torch.long).to(self.device)
-#             memory_distances[class_label] = torch.full((memory_size_per_class,), float("inf")).to(self.device)
-#             self.memory_set_indices[class_label] = torch.zeros(memory_size_per_class, dtype=torch.long).to(self.device)
+#             memory_x[class_label] = torch.zeros(memory_size_per_class, f, device=device)
+#             memory_y[class_label] = torch.zeros(memory_size_per_class, 1, dtype=torch.long, device=device)
+#             memory_distances[class_label] = torch.full((memory_size_per_class,), float("inf"), device=device)
+#             self.memory_set_indices[class_label] = torch.zeros(memory_size_per_class, dtype=torch.long, device=device)
         
 #         # Iterate over each class
 #         for class_label in classes:
@@ -150,12 +148,12 @@ class RandomMemorySetManager(MemorySetManager):
             
 #             # Initialize centroids and cluster counters for the current class if not already initialized
 #             if class_label not in self.centroids:
-#                 self.centroids[class_label] = torch.randn(self.num_centroids, f).to(self.device)
-#                 self.cluster_counters[class_label] = torch.zeros(self.num_centroids).to(self.device)
+#                 self.centroids[class_label] = torch.randn(self.num_centroids, f, device=device)
+#                 self.cluster_counters[class_label] = torch.zeros(self.num_centroids, device=device)
             
 #             # Iterate over the samples of the current class
 #             for i in range(class_samples.shape[0]):
-#                 sample = class_samples[i].to(self.device)
+#                 sample = class_samples[i]
 #                 label = class_labels[i].item()
                 
 #                 # Find the closest centroid for the current class
@@ -189,10 +187,9 @@ class RandomMemorySetManager(MemorySetManager):
 #         return memory_x_concat, memory_y_concat
     
 
-#this is for cifar rn 
+# #this is for cifar rn 
 class KMeansMemorySetManager(MemorySetManager):
-    # def __init__(self, p: float, num_centroids: int, device: torch.device, random_seed: int = 42):
-    def __init__(self, p: float, num_centroids: int, random_seed: int = 42):
+    def __init__(self, p: float, num_centroids: int, device: torch.device, random_seed: int = 42):
         self.p = p
         self.num_centroids = num_centroids
         self.random_seed = random_seed

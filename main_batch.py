@@ -97,7 +97,7 @@ def main(config: Config):
                 memory_set_manager = config.memory_set_manager(
                     p,
                     num_centroids=config.num_centroids,
-                    # device=DEVICE,
+                    device=config.device,
                     random_seed=random_seed
                 )
             elif config.memory_set_manager == LambdaMemorySetManager:

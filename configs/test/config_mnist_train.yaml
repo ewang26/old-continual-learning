@@ -5,16 +5,17 @@ wandb_profile: alanhsu
 
 
 # Memory set hyperparameters
-memory_set_manager: random
+memory_set_manager: kmeans
 use_memory_set: True
 grad_type: None
 p: dummar_var
 use_random_img: False
 #num_samples: 1
 num_ideal_models: None
+device: cpu
 
 # for gradient evaluating
-p_arr: [0.0001, 0.002]
+p_arr: [0.001, 0.002]
 num_samples: [2, 2]
 #p_arr: [0.001, 1]
 #num_samples: [10, 10, 10, 10, 10, 10, 10, 10, 10]
