@@ -1,6 +1,6 @@
 from typing import Dict, Union
 from data import RandomMemorySetManager, KMeansMemorySetManager, LambdaMemorySetManager, \
-    GSSMemorySetManager, ClassBalancedReservoirSampling, iCaRL
+    GSSMemorySetManager, ClassBalancedReservoirSampling, iCaRL, GCRMemorySetManager
 from managers import (
     MnistManagerSplit,
     Cifar10ManagerSplit,
@@ -72,6 +72,8 @@ class Config:
                     setattr(self, key, LambdaMemorySetManager)
                 elif val == "GSS":
                     setattr(self, key, GSSMemorySetManager)
+                elif val == "GCR":
+                    setattr(self, key, GCRMemorySetManager)
                 elif val == "class_balanced":
                     setattr(self, key, ClassBalancedReservoirSampling)
                 elif val == "iCaRL":

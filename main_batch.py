@@ -1,7 +1,7 @@
 #main_batch 
 
 from data import RandomMemorySetManager, KMeansMemorySetManager, \
-        LambdaMemorySetManager, GSSMemorySetManager, ClassBalancedReservoirSampling, iCaRL
+        LambdaMemorySetManager, GSSMemorySetManager, ClassBalancedReservoirSampling, iCaRL, GCRMemorySetManager
 from managers import MnistManagerSplit, Cifar10ManagerSplit, Cifar100ManagerSplit
 from configs.config import Config
 from pathlib import Path

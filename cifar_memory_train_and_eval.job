@@ -16,8 +16,6 @@ VENV_PATH=/n/home12/thb489/continual-learning
 
 source activate $VENV_PATH
 
-module load python
-
 # python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/cifar10_train_ideal_model.yaml
 
 # echo "Ideal models trained"
