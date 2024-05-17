@@ -64,9 +64,9 @@ class Config:
                     if config_dict['learning_manager'] == 'mnist_split':
                         setattr(self, key, KMeansMemorySetManager)
                     elif config_dict['learning_manager'] == 'cifar10_split':
-                        setattr(self, key, KMeansCIFARMemorySetManager)
+                        setattr(self, key, KMeansMemorySetManager)
                     else:
-                        print('is this method implemented for kmeans?')
+                        print('is this method implemented fsor kmeans?')
                         assert False
                 elif val == "lambda" or val == "Lambda":
                     setattr(self, key, LambdaMemorySetManager)
