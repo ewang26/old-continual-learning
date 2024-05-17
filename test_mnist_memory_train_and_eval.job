@@ -16,7 +16,7 @@ VENV_PATH=/n/home12/thb489/continual-learning
 
 source activate $VENV_PATH
 
-python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/test/config_cifar10_grad_eval.yaml
-python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/test/config_cifar10_train.yaml
+python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/test/config_mnist_grad_eval.yaml
+python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/test/config_mnist_train.yaml
 
 #python ${MAIN_PATH}/save_similarity_block_v2.py --config ${MAIN_PATH}/configs/grad_eval/mnist_rest.yaml
