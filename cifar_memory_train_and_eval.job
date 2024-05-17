@@ -16,7 +16,7 @@ VENV_PATH=/n/home12/thb489/continual-learning
 
 source activate $VENV_PATH
 
-module load python
+# module load python
 
 # python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/cifar10_train_ideal_model.yaml
 
@@ -29,11 +29,11 @@ module load python
 # python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/class_balanced/config_cifar10_grad_eval.yaml
 # python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/class_balanced/config_cifar10_train.yaml
 
-python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/lambda/config_cifar10_grad_eval.yaml
-python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/lambda/config_cifar10_train.yaml
+# python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/lambda/config_cifar10_grad_eval.yaml
+# python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/lambda/config_cifar10_train.yaml
 
-# python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/GSS/config_cifar10_grad_eval.yaml
-# python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/GSS/config_cifar10_train.yaml
+python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/GSS/config_cifar10_grad_eval.yaml
+python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/GSS/config_cifar10_train.yaml
 
 # python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/iCaRL/config_cifar10_grad_eval.yaml
 # python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/iCaRL/config_cifar10_train.yaml
