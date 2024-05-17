@@ -24,36 +24,22 @@ source activate $VENV_PATH
 
 # echo "Ideal models moved"
 
-echo "CLASS BALANCED"
-
 python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/class_balanced/config_cifar10_grad_eval.yaml
 python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/class_balanced/config_cifar10_train.yaml
-
-echo "LAMBDA"
 
 python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/lambda/config_cifar10_grad_eval.yaml
 python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/lambda/config_cifar10_train.yaml
 
-echo "KMEANS"
-
 python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/GSS/config_cifar10_grad_eval.yaml
 python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/GSS/config_cifar10_train.yaml
-
-echo "ICARL"
 
 python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/iCaRL/config_cifar10_grad_eval.yaml
 python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/iCaRL/config_cifar10_train.yaml
 
-echo "RANDOM"
-
 python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/random/config_cifar10_grad_eval.yaml
 python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/random/config_cifar10_train.yaml
 
-echo "KMEANS"
-
 python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/kmeans/config_cifar10_grad_eval.yaml
 python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/kmeans/config_cifar10_train.yaml
-
-echo "SIMILARITY"
 
 python ${MAIN_PATH}/save_similarity_block_v2.py --config ${MAIN_PATH}/configs/grad_eval/cifar10_rest.yaml
