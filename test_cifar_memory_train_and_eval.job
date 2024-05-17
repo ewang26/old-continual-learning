@@ -11,8 +11,8 @@
 
 export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:128
 
-MAIN_PATH=/n/home05/alanhsu/workspace/research/continual_learning
-VENV_PATH=/n/home05/alanhsu/.conda/envs/continualLearning
+MAIN_PATH=/n/home12/thb489/continual-learning
+VENV_PATH=/n/home12/thb489/continual-learning
 
 source activate $VENV_PATH
 

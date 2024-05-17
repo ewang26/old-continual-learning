@@ -10,11 +10,17 @@
 #SBATCH -e logs/train_eval_%j.err
 
 export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:128
-
-MAIN_PATH=/n/home05/alanhsu/workspace/research/continual_learning
-VENV_PATH=/n/home05/alanhsu/.conda/envs/continualLearning
-
+MAIN_PATH=/n/home12/thb489/continual-learning
+VENV_PATH=/n/home12/thb489/continual-learning
 source activate $VENV_PATH
+
+python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/mnist_train_ideal_model.yaml
+
+echo "Ideal models trained"
+
+cp -r ${MAIN_PATH}/models/mnist_split/random/1 ${MAIN_PATH}/models/mnist_split/ideal_model
+
+echo "Ideal models moved"
 
 python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/class_balanced/config_cifar10_grad_eval.yaml
 python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/class_balanced/config_cifar10_train.yaml
@@ -28,10 +34,10 @@ python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/GSS/config_cifar
 python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/iCaRL/config_cifar10_grad_eval.yaml
 python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/iCaRL/config_cifar10_train.yaml
 
-python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/kmeans/config_cifar10_grad_eval.yaml
-python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/kmeans/config_cifar10_train.yaml
-
 python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/random/config_cifar10_grad_eval.yaml
 python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/random/config_cifar10_train.yaml
+
+python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/kmeans/config_cifar10_grad_eval.yaml
+python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/kmeans/config_cifar10_train.yaml
 
 python ${MAIN_PATH}/save_similarity_block_v2.py --config ${MAIN_PATH}/configs/grad_eval/cifar10_rest.yaml
