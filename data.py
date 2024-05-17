@@ -263,7 +263,7 @@ class KMeansMemorySetManager(MemorySetManager):
         
         # Concatenate memory sets from all classes
         memory_x_concat = torch.cat(list(memory_x.values()), dim=0)
-        memory_y_concat = torch.cat(list(memory_y.values()), dim=0).view(-1, 1)
+        memory_y_concat = torch.cat(list(memory_y.values()), dim=0).view(-1)
         
         return memory_x_concat, memory_y_concat
 
