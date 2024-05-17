@@ -10,8 +10,10 @@
 #SBATCH -e logs/train_eval_%j.err
 
 export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:128
+
 MAIN_PATH=/n/home12/thb489/continual-learning
 VENV_PATH=/n/home12/thb489/continual-learning
+
 source activate $VENV_PATH
 
 # python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/cifar10_train_ideal_model.yaml

@@ -191,10 +191,10 @@ class RandomMemorySetManager(MemorySetManager):
 
 #this is for cifar rn 
 class KMeansMemorySetManager(MemorySetManager):
-    def __init__(self, p: float, num_centroids: int, device: torch.device, random_seed: int = 42):
+    # def __init__(self, p: float, num_centroids: int, device: torch.device, random_seed: int = 42):
+    def __init__(self, p: float, num_centroids: int, random_seed: int = 42):
         self.p = p
         self.num_centroids = num_centroids
-        self.device = device
         self.random_seed = random_seed
         torch.manual_seed(self.random_seed)
         self.centroids = {}
@@ -222,10 +222,10 @@ class KMeansMemorySetManager(MemorySetManager):
         self.memory_set_indices = {}
         
         for class_label in classes:
-            memory_x[class_label] = torch.zeros((memory_size_per_class, c, h, w), device=self.device)
-            memory_y[class_label] = torch.zeros((memory_size_per_class, 1), dtype=torch.long, device=self.device)
-            memory_distances[class_label] = torch.full((memory_size_per_class,), float("inf"), device=self.device)
-            self.memory_set_indices[class_label] = torch.zeros(memory_size_per_class, dtype=torch.long, device=self.device)
+            memory_x[class_label] = torch.zeros((memory_size_per_class, c, h, w))
+            memory_y[class_label] = torch.zeros((memory_size_per_class, 1), dtype=torch.long)
+            memory_distances[class_label] = torch.full((memory_size_per_class,), float("inf"))
+            self.memory_set_indices[class_label] = torch.zeros(memory_size_per_class, dtype=torch.long)
         
         # Iterate over each class
         for class_label in classes:
@@ -234,8 +234,8 @@ class KMeansMemorySetManager(MemorySetManager):
             class_labels = y[class_mask]
             
             if class_label not in self.centroids:
-                self.centroids[class_label] = torch.randn((self.num_centroids, c, h, w), device=self.device)
-                self.cluster_counters[class_label] = torch.zeros(self.num_centroids, device=self.device)
+                self.centroids[class_label] = torch.randn((self.num_centroids, c, h, w))
+                self.cluster_counters[class_label] = torch.zeros(self.num_centroids)
             
             # Iterate over the samples of the current class
             for i in range(class_samples.shape[0]):
