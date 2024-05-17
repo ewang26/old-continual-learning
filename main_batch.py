@@ -8,28 +8,33 @@ from pathlib import Path
 from itertools import zip_longest
 import os
 import csv
+
 import wandb
 import torch
 import random
 import numpy as np
+
 import yaml
 import argparse
 
 
-# Check for M1 Mac MPS (Apple Silicon GPU) support
-if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
-    print("Using M1 Mac")
-    DEVICE = torch.device("mps")
-# Check for CUDA support (NVIDIA GPU)
-elif torch.cuda.is_available():
-    print("Using CUDA")
-    DEVICE = torch.device("cuda")
-# Default to CPU if neither is available
-else:
-    print("Using CPU")
-    DEVICE = torch.device("cpu")
+# # Check for M1 Mac MPS (Apple Silicon GPU) support
+# if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+#     print("Using M1 Mac")
+#     DEVICE = torch.device("mps")
+# # Check for CUDA support (NVIDIA GPU)
+# elif torch.cuda.is_available():
+#     print("Using CUDA")
+#     DEVICE = torch.device("cuda")
+# # Default to CPU if neither is available
+# else:
+#     print("Using CPU")
+#     DEVICE = torch.device("cpu")
 
 #DEVICE = torch.device("cpu")
+
+from data import DEVICE
+
 
 def setup_wandb(config: Config):
     run_name = config.run_name
@@ -135,7 +140,8 @@ def main(config: Config):
                             f'{model_load_dir}/ideal_model/train_{ideal_model_index}/task_{task_num}/model.pt'
                             #f'{model_load_dir}/ideal_model/{config.memory_selection_method}/1/train/task_{task_num}/{grad_loc}_grad/model.pt'
                         )
-                        post_train_model = torch.load(post_train_model_load_path)
+                        post_train_model = torch.load(post_train_model_load_path, map_location=DEVICE)
+                        # post_train_model = torch.load(post_train_model_load_path, map_location="mps") # only for MPS. change to cuda for cluster!
                         # Can get pre training model 
 
                         for grad_type in config.grad_type:

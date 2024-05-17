@@ -25,7 +25,20 @@ import torchvision.transforms as transforms
 import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
 
-DEVICE = torch.device("mps") # change this before cluster!
+# Check for M1 Mac MPS (Apple Silicon GPU) support
+if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+    print("Using M1 Mac")
+    DEVICE = torch.device("mps")
+# Check for CUDA support (NVIDIA GPU)
+elif torch.cuda.is_available():
+    print("Using CUDA")
+    DEVICE = torch.device("cuda")
+# Default to CPU if neither is available
+else:
+    print("Using CPU")
+    DEVICE = torch.device("cpu")
+
+# DEVICE = torch.device("mps") # change this before cluster!
 
 
 class MemorySetManager(ABC):
@@ -76,7 +89,7 @@ class KMeansMemorySetManager(MemorySetManager):
         Args:
             p: The percentage of samples to retain in the memory set.
             num_centroids: The number of centroids to use for K-Means clustering.
-            device: use mps
+            device: use device
             random_seed: The random seed for reproducibility.
         """
         self.p = p
@@ -500,7 +513,7 @@ class ClassBalancedReservoirSampling:
 # Hyper Parameters
 # num_epochs = 50
 
-num_epochs = 2
+num_epochs = 50
 batch_size = 100
 learning_rate = 0.002
 
@@ -541,12 +554,7 @@ class iCaRLNet(nn.Module):
         self.exemplar_means = []
 
     def forward(self, x):
-        # print(f"x shape is {x.shape}")
-        # if x.dim() == 2:
-        #     # x = x.unsqueeze(1) 
-        #     # x = x.unsqueeze(0).unsqueeze(0)  # add batch dimension and channel dimension, now (1, 1, height, width)
-        #     x = x.view(-1, 1, 28, 28)
-        print(f"during forward, x shape is: {x.shape}")
+        # print(f"during forward, x shape is: {x.shape}")
         x = self.feature_extractor(x)
         x = self.bn(x)
         x = self.ReLU(x)
@@ -599,13 +607,16 @@ class iCaRLNet(nn.Module):
             # for i, img in enumerate(images):
             for img in images:
                 
+                # print(f"before checking image dim: {img.shape}")
                 if img.dim() == 3:  # Check if the channel dimension is missing
                     img = img.unsqueeze(0)  # Add a batch dimension if it's a single image
                 img = img.to(DEVICE)
                 
-                if img.size(1) == 1:
+                if img.dim() == 1: # If it's mnist, it is just 784 flattened
+                    img = img.view(1, 28, 28) # add the color channel and reshape
                     img = self.grayscale_to_rgb(img)
 
+                # print(f"img dimension is: {img.shape}")
                 img = transform(img)  # Apply transformation
 
                 # Extract features
@@ -713,24 +724,26 @@ class iCaRLNet(nn.Module):
         q = torch.zeros(len(combined_dataset), self.n_classes)
         with torch.no_grad():
             for idx, (images, labels) in enumerate(loader):
+                # print(f"images.size before reshape is {images.shape}")
 
-
-                print(f"before transform shape is {images.shape} and dim is {images.dim()}")
+                # print(f"before transform shape is {images.shape} and dim is {images.dim()}")
                 if images.dim() == 2:
                     # x = x.unsqueeze(1) 
                     # x = x.unsqueeze(0).unsqueeze(0)  # add batch dimension and channel dimension, now (1, 1, height, width)
-                    images = x.view(-1, 1, 28, 28)
+                    images = images.view(-1, 1, 28, 28)
                     images = self.grayscale_to_rgb(images)
 
                 # if images.size(1) == 1:
                 #     images = self.grayscale_to_rgb(images)
-                print(f"after transform: {images.shape}")
+                # print(f"after transform: {images.shape}")
                 g = torch.sigmoid(self.forward(images))
 
                 start_index = idx * loader.batch_size
                 end_index = start_index + images.size(0)
-                print(f"start_index {start_index}, end index {end_index}")
-                print(f"g.data has size {g.data.size()}")
+                # print(f"images.size after reshape is {images.shape}")
+                # print(f"start_index {start_index}, end index {end_index}")
+                # print(f"start_index is {start_index}")
+                # print(f"q has length {q.size()}")
                 q[start_index:end_index] = g.data
 
 
@@ -742,6 +755,12 @@ class iCaRLNet(nn.Module):
             for idx, (images, labels) in enumerate(loader):
                 images, labels = images.to(DEVICE), labels.to(DEVICE)
                 optimizer.zero_grad()
+
+                if images.dim() == 2:
+                    # x = x.unsqueeze(1) 
+                    # x = x.unsqueeze(0).unsqueeze(0)  # add batch dimension and channel dimension, now (1, 1, height, width)
+                    images = images.view(-1, 1, 28, 28)
+                    images = self.grayscale_to_rgb(images)
 
                 g = self.forward(images)
 
