@@ -14,11 +14,11 @@ MAIN_PATH=/n/home12/thb489/continual-learning
 VENV_PATH=/n/home12/thb489/continual-learning
 source activate $VENV_PATH
 
-python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/mnist_train_ideal_model.yaml
+python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/cifar10_train_ideal_model.yaml
 
 echo "Ideal models trained"
 
-cp -r ${MAIN_PATH}/models/mnist_split/random/1 ${MAIN_PATH}/models/mnist_split/ideal_model
+cp -r ${MAIN_PATH}/models/cifar10_split/random/1 ${MAIN_PATH}/models/cifar_split/ideal_model
 
 echo "Ideal models moved"
 
