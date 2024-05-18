@@ -310,18 +310,23 @@ class ContinualLearningManager(ABC):
                 # Check if memory_x is empty
                 if self.tasks[self.task_index].memory_x.size(0) == 0:
                     # Initialize memory_x with an appropriate shape
-                    feature_dim = model.feature_dim if hasattr(model, 'feature_dim') else expected_feature_dim
-                    self.tasks[self.task_index].memory_x = torch.empty(0, feature_dim).to(DEVICE)
-                
+                    memory_set_manager = self.tasks[self.task_index].memory_set_manager
+                    if memory_set_manager.memory_x_shape is not None:
+                        feature_dim = memory_set_manager.memory_x_shape
+                    elif hasattr(model, 'input_dim'):
+                        feature_dim = model.input_dim
+                    else:
+                        raise ValueError("Feature dimension not found in model or task.")
+
+                    self.tasks[self.task_index].memory_x = torch.empty(0, *feature_dim).to(DEVICE)
+
                 # Ensure memory_x is not empty
                 if self.tasks[self.task_index].memory_x.size(0) > 0:
                     D = torch.empty(0, self.tasks[self.task_index].memory_x.shape[1] + 2).to(DEVICE)
                 else:
                     raise ValueError("memory_x is empty and cannot be processed.")
 
-
                 # Initialize variables for GCR algorithm
-                # Before the problematic line
                 print(f"self.task_index: {self.task_index}")
                 print(f"self.tasks[self.task_index]: {self.tasks[self.task_index]}")
                 print(f"self.tasks[self.task_index].memory_x: {self.tasks[self.task_index].memory_x}")
