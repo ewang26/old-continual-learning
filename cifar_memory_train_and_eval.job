@@ -27,7 +27,6 @@ source "${VENV_PATH}/bin/activate"
 # Uncomment the following line if the Python module needs to be loaded
 # module load python
 
-
 # Run class balanced training and evaluation
 python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/class_balanced/config_cifar10_grad_eval.yaml
 python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/class_balanced/config_cifar10_train.yaml
