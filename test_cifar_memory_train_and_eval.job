@@ -6,8 +6,8 @@
 #SBATCH --mem=10GB
 #SBATCH --gres=gpu:1
 #SBATCH --job-name=continual_learning
-#SBATCH -o logs/train_eval_%j.out
-#SBATCH -e logs/train_eval_%j.err
+#SBATCH -o logs/%x_%j.out
+#SBATCH -e logs/%x_%j.err
 
 export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:128
 
@@ -15,28 +15,12 @@ export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:128
 MAIN_PATH="/n/home12/thb489/continual-learning"
 VENV_PATH="/n/home12/thb489/continual-learning/myenv"
 
-# Print paths for debugging
-echo "Main path: ${MAIN_PATH}"
-echo "Virtual environment path: ${VENV_PATH}"
-
-# Check current directory
-echo "Current directory: $(pwd)"
-
 # Set working directory explicitly
 cd ${MAIN_PATH}
-
-# Verify working directory
-echo "Changed to directory: $(pwd)"
 
 # Activate the virtual environment
 source "${VENV_PATH}/bin/activate"
 
-# Verify activation
-echo "Using Python from: $(which python)"
-
-# Print environment variables for debugging
-env
-
-# Run the scripts
+# Run the scripts and redirect output to log files
 python "${MAIN_PATH}/main_batch.py" --config "${MAIN_PATH}/configs/test/config_cifar10_grad_eval.yaml"
 python "${MAIN_PATH}/main_batch.py" --config "${MAIN_PATH}/configs/test/config_cifar10_train.yaml"
