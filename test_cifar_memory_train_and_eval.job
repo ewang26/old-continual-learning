@@ -14,7 +14,7 @@ export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:128
 MAIN_PATH=/n/home12/thb489/continual-learning
 VENV_PATH=/n/home12/thb489/continual-learning/myenv
 
-source activate $VENV_PATH
+source ${VENV_PATH}/bin/activate
 
 python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/test/config_cifar10_grad_eval.yaml
 python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/test/config_cifar10_train.yaml
