@@ -6,8 +6,8 @@
 #SBATCH --mem=10GB
 #SBATCH --gres=gpu:1
 #SBATCH --job-name=continual_learning
-#SBATCH -o logs/%x_%j.out
-#SBATCH -e logs/%x_%j.err
+#SBATCH -o logs/train_eval_%j.out
+#SBATCH -e logs/train_eval_%j.err
 
 export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:128
 
