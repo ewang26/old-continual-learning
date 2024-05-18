@@ -76,7 +76,7 @@ def main(config: Config):
         num_samples = getattr(config, "num_samples", 0)[p_index]
 
         for sample_num in range(num_samples):
-            print(f'*** at run = {sample_num}')
+            print(f'*** RUN = {sample_num}')
             random_seed = int(rng.integers(low=0, high=1e6))
             # memory_set_manager = config.memory_set_manager(
             #     p, random_seed=random_seed
