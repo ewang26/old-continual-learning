@@ -3,6 +3,7 @@ from torch import Tensor
 from typing import Set
 from data import MemorySetManager
 import numpy as np
+import torch
 
 
 class Task:
