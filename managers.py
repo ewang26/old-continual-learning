@@ -308,6 +308,12 @@ class ContinualLearningManager(ABC):
                 current_labels: List[int] = list(self._get_current_labels())
 
                 # Initialize variables for GCR algorithm
+                # Before the problematic line
+                print(f"self.task_index: {self.task_index}")
+                print(f"self.tasks[self.task_index]: {self.tasks[self.task_index]}")
+                print(f"self.tasks[self.task_index].memory_x: {self.tasks[self.task_index].memory_x}")
+                print(f"Shape of memory_x: {self.tasks[self.task_index].memory_x.shape}")
+
                 D = torch.empty(0, self.tasks[self.task_index].memory_x.shape[1] + 2).to(DEVICE)
                 W_D = torch.empty(0).to(DEVICE)
                 X = torch.empty(0, self.tasks[self.task_index].memory_x.shape[1] + 2).to(DEVICE)
