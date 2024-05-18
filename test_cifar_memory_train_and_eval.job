@@ -11,10 +11,29 @@
 
 export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:128
 
-source activate /n/home12/thb489/continual-learning/myenv
+VENV_PATH=/n/home12/thb489/continual-learning/myenv
 
-python /n/home12/thb489/continual-learning/main_batch.py --config /n/home12/thb489/continual-learning/configs/test/config_cifar10_grad_eval.yaml
-python /n/home12/thb489/continual-learning/main_batch.py --config /n/home12/thb489/continual-learning/configs/test/config_cifar10_train.yaml
-#python /n/home12/thb489/continual-learning/save_similarity_block_v2.py --config /n/home12/thb489/continual-learning/configs/grad_eval/cifar10_rest.yaml
+# Run the Python scripts using the virtual environment's Python executable
+${VENV_PATH}/bin/python /n/home12/thb489/continual-learning/main_batch.py --config /n/home12/thb489/continual-learning/configs/test/config_cifar10_grad_eval.yaml
+${VENV_PATH}/bin/python /n/home12/thb489/continual-learning/main_batch.py --config /n/home12/thb489/continual-learning/configs/test/config_cifar10_train.yaml
+#${VENV_PATH}/bin/python /n/home12/thb489/continual-learning/save_similarity_block_v2.py --config /n/home12/thb489/continual-learning/configs/grad_eval/cifar10_rest.yaml
+# #!/bin/bash
+# #SBATCH -n 1
+# #SBATCH -N 1
+# #SBATCH -p gpu
+# #SBATCH -t 0-01:00
+# #SBATCH --mem=10
+# #SBATCH --gres=gpu:1
+# #SBATCH --job-name=continual_learning
+# #SBATCH -o logs/train_eval_%j.out
+# #SBATCH -e logs/train_eval_%j.err
 
-deactivate
+# export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:128
+
+# source activate /n/home12/thb489/continual-learning/myenv
+
+# python /n/home12/thb489/continual-learning/main_batch.py --config /n/home12/thb489/continual-learning/configs/test/config_cifar10_grad_eval.yaml
+# python /n/home12/thb489/continual-learning/main_batch.py --config /n/home12/thb489/continual-learning/configs/test/config_cifar10_train.yaml
+# #python /n/home12/thb489/continual-learning/save_similarity_block_v2.py --config /n/home12/thb489/continual-learning/configs/grad_eval/cifar10_rest.yaml
+
+# deactivate
