@@ -300,6 +300,7 @@ class ContinualLearningManager(ABC):
                 
         elif self.memory_set_manager.__class__.__name__ == 'GCRMemorySetManager':
             if not (p == 1):
+                # Get a 1-batch dataloader
                 terminal_train_dataloader = self._get_terminal_task_dataloader()
 
                 # Reset criterion just in case
