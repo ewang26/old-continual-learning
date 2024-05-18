@@ -11,15 +11,10 @@
 
 export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:128
 
-VENV_PATH=/n/home12/thb489/continual-learning/myenv
+source /n/home12/thb489/continual-learning/myenv/bin/activate
 
-# Activate the virtual environment
-source ${VENV_PATH}/bin/activate
-
-# Run the Python scripts directly
 python /n/home12/thb489/continual-learning/main_batch.py --config /n/home12/thb489/continual-learning/configs/test/config_cifar10_grad_eval.yaml
 python /n/home12/thb489/continual-learning/main_batch.py --config /n/home12/thb489/continual-learning/configs/test/config_cifar10_train.yaml
 #python /n/home12/thb489/continual-learning/save_similarity_block_v2.py --config /n/home12/thb489/continual-learning/configs/grad_eval/cifar10_rest.yaml
 
-# Deactivate the virtual environment (optional)
 deactivate
