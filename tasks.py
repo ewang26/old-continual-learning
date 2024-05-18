@@ -45,10 +45,14 @@ class Task:
 
         if memory_set_manager.__class__.__name__ == 'GSSMemorySetManager':
             self.memory_set_manager = memory_set_manager # save the manager for future use
-            self.C_arr = np.array([]) # initialize score array for memory set
+            self.C_arr = np.array([]) # initialize score array for memory set. i can use to initiaze for weights. 
         
         if memory_set_manager.__class__.__name__ == 'LambdaMemorySetManager':
             self.memory_set_manager = memory_set_manager
+
+        elif memory_set_manager.__class__.__name__ == 'GCRMemorySetManager':
+            self.memory_set_manager = memory_set_manager
+            self.memory_set_weights = memory_set_manager.memory_set_weights  # initialize weights for memory set
 
     def modify_memory(self, sample_x, sample_y, outputs=None, grad_sample=None, grad_batch=None):
 
