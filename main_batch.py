@@ -76,6 +76,7 @@ def main(config: Config):
         num_samples = getattr(config, "num_samples", 0)[p_index]
 
         for sample_num in range(num_samples):
+            print(f'*** at run for run = {sample_num}')
             random_seed = int(rng.integers(low=0, high=1e6))
             # memory_set_manager = config.memory_set_manager(
             #     p, random_seed=random_seed
@@ -127,6 +128,7 @@ def main(config: Config):
             final_backward_transfers = []
 
             for task_num in range(num_tasks):
+                print(f'*** at task = {sample_num}')
                 
                 if model_load_dir is not None:
                     
