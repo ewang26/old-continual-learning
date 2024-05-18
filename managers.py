@@ -253,13 +253,14 @@ class ContinualLearningManager(ABC):
                     #print(5 in valid_labels)
                     #assert False
 
+                    #computes gradient
                     grad_sample = self.get_forward_pass_gradients(batch_x, batch_y, model, criterion, current_labels)
 
                     
                     #need grad_batch, or forward pass of sample from memory set
 
                     # zero param gradients again
-                    for param in model.parameters():
+                    for param in model.parameters(): # this gets weights
                         param.grad = None
 
                     # create subset dataset from updated memory set
@@ -276,6 +277,9 @@ class ContinualLearningManager(ABC):
                     
                     #assert(False)
                     self.tasks[self.task_index].modify_memory(batch_x, batch_y, grad_sample=grad_sample, grad_batch=grad_batch)
+
+                    # self.tasks[self.task_index].memory_x = ... to modify memory_x
+                    # self.tasks[self.task_index].memory_x = ... to modify memory_y
         
         elif self.memory_set_manager.__class__.__name__ == 'LambdaMemorySetManager':
             # assume we update for all the data
@@ -292,6 +296,229 @@ class ContinualLearningManager(ABC):
                     param.grad = None
                 outputs = model(batch_x)
                 self.tasks[self.task_index].modify_memory(batch_x, batch_y, outputs=outputs)
+
+        elif self.memory_set_manager.__class__.__name__ in ['GCRMemorySetManager']:
+                terminal_train_dataloader = self._get_terminal_task_dataloader()
+                criterion = nn.CrossEntropyLoss()
+                current_labels = list(self._get_current_labels())
+
+                for batch_x, batch_y in terminal_train_dataloader:
+                    for param in model.parameters():
+                        param.grad = None
+                    grad_sample = self.get_forward_pass_gradients(batch_x, batch_y, model, criterion, current_labels)
+
+                    for param in model.parameters():
+                        param.grad = None
+                    mem_set_len = len(self.tasks[self.task_index].memory_x)
+                    n = np.floor(self.tasks[self.task_index].memory_set_manager.gss_p * mem_set_len).astype(np.uint32) + 1
+                    indices = torch.randperm(mem_set_len)[:n]
+                    mem_sample_x, mem_sample_y = self.tasks[self.task_index].memory_x[indices], self.tasks[self.task_index].memory_y[indices].long()
+                    grad_batch = self.get_forward_pass_gradients(mem_sample_x, mem_sample_y, model, criterion, current_labels) if not (mem_set_len == 0) else np.zeros_like(grad_sample)
+
+                    self.tasks[self.task_index].modify_memory(batch_x, batch_y, grad_sample=grad_sample, grad_batch=grad_batch)
+
+        elif self.memory_set_manager.__class__.__name__ == 'LambdaMemorySetManager':
+            terminal_train_dataloader = self._get_terminal_task_dataloader(full_batch=True)
+            criterion = nn.CrossEntropyLoss()
+            for batch_x, batch_y in terminal_train_dataloader:
+                for param in model.parameters():
+                    param.grad = None
+                outputs = model(batch_x)
+                self.tasks[self.task_index].modify_memory(batch_x, batch_y, outputs=outputs)
+
+        elif self.memory_set_manager.__class__.__name__ in ['GCRMemorySetManager']:
+            if not (p == 1):
+                terminal_train_dataloader = self._get_terminal_task_dataloader()
+                criterion = nn.CrossEntropyLoss()
+                current_labels = list(self._get_current_labels())
+
+                for batch_x, batch_y in terminal_train_dataloader:
+                    for param in model.parameters():
+                        param.grad = None
+                    grad_sample = self.get_forward_pass_gradients(batch_x, batch_y, model, criterion, current_labels)
+
+                    for param in model.parameters():
+                        param.grad = None
+                    mem_set_len = len(self.tasks[self.task_index].memory_x)
+                    n = np.floor(self.tasks[self.task_index].memory_set_manager.gss_p * mem_set_len).astype(np.uint32) + 1
+                    indices = torch.randperm(mem_set_len)[:n]
+                    mem_sample_x, mem_sample_y = self.tasks[self.task_index].memory_x[indices], self.tasks[self.task_index].memory_y[indices].long()
+                    grad_batch = self.get_forward_pass_gradients(mem_sample_x, mem_sample_y, model, criterion, current_labels) if not (mem_set_len == 0) else np.zeros_like(grad_sample)
+
+                    self.tasks[self.task_index].modify_memory(batch_x, batch_y, grad_sample=grad_sample, grad_batch=grad_batch)
+
+        elif self.memory_set_manager.__class__.__name__ == 'LambdaMemorySetManager':
+            terminal_train_dataloader = self._get_terminal_task_dataloader(full_batch=True)
+            criterion = nn.CrossEntropyLoss()
+            for batch_x, batch_y in terminal_train_dataloader:
+                for param in model.parameters():
+                    param.grad = None
+                outputs = model(batch_x)
+                self.tasks[self.task_index].modify_memory(batch_x, batch_y, outputs=outputs)
+
+        elif self.memory_set_manager.__class__.__name__ in ['GCRMemorySetManager']:
+                terminal_train_dataloader = self._get_terminal_task_dataloader()
+                criterion = nn.CrossEntropyLoss()
+                current_labels = list(self._get_current_labels())
+
+                for batch_x, batch_y in terminal_train_dataloader:
+                    for param in model.parameters():
+                        param.grad = None
+                    grad_sample = self.get_forward_pass_gradients(batch_x, batch_y, model, criterion, current_labels)
+
+                    for param in model.parameters():
+                        param.grad = None
+                    mem_set_len = len(self.tasks[self.task_index].memory_x)
+                    n = np.floor(self.tasks[self.task_index].memory_set_manager.gss_p * mem_set_len).astype(np.uint32) + 1
+                    indices = torch.randperm(mem_set_len)[:n]
+                    mem_sample_x, mem_sample_y = self.tasks[self.task_index].memory_x[indices], self.tasks[self.task_index].memory_y[indices].long()
+                    grad_batch = self.get_forward_pass_gradients(mem_sample_x, mem_sample_y, model, criterion, current_labels) if not (mem_set_len == 0) else np.zeros_like(grad_sample)
+
+                    self.tasks[self.task_index].modify_memory(batch_x, batch_y, grad_sample=grad_sample, grad_batch=grad_batch)
+
+        elif self.memory_set_manager.__class__.__name__ == 'LambdaMemorySetManager':
+            terminal_train_dataloader = self._get_terminal_task_dataloader(full_batch=True)
+            criterion = nn.CrossEntropyLoss()
+            for batch_x, batch_y in terminal_train_dataloader:
+                for param in model.parameters():
+                    param.grad = None
+                outputs = model(batch_x)
+                self.tasks[self.task_index].modify_memory(batch_x, batch_y, outputs=outputs)
+                
+        elif self.memory_set_manager.__class__.__name__ in ['GCRMemorySetManager']:
+            if not (p == 1):
+                # Get a 1-batch dataloader
+                terminal_train_dataloader = self._get_terminal_task_dataloader()
+
+                # Reset criterion just in case
+                criterion = nn.CrossEntropyLoss()
+                current_labels: List[int] = list(self._get_current_labels())
+
+                # Initialize variables for GCR algorithm
+                D = torch.empty(0, batch_x.shape[1] + 2).to(DEVICE)
+                W_D = torch.empty(0).to(DEVICE)
+                X = torch.empty(0, batch_x.shape[1] + 2).to(DEVICE)
+                W_X = torch.empty(0).to(DEVICE)
+
+                # Iterate through samples one by one
+                for batch_x, batch_y in terminal_train_dataloader:
+                    # Compute gradient for the new sample
+                    for param in model.parameters():
+                        param.grad = None
+                    h_x, z = model(batch_x.to(DEVICE), return_preactivations=True)
+                    grad_sample = self.get_forward_pass_gradients(batch_x, batch_y, model, criterion, current_labels)
+
+                    # Append the new sample and its gradient to D
+                    D = torch.cat((D, torch.cat((batch_x.to(DEVICE), batch_y.unsqueeze(1).to(DEVICE), h_x), dim=1).unsqueeze(0)))
+
+                    # Initialize weights for the new sample
+                    W_D = torch.cat((W_D, torch.tensor([1.0]).to(DEVICE)))
+
+                    # Get the number of unique labels in the dataset
+                    Y = len(torch.unique(torch.cat((self.tasks[self.task_index].memory_y, batch_y)).to(DEVICE)))
+
+                    # Partition dataset D and weights W_D based on labels
+                    D_y = [torch.empty(0, D.shape[1]).to(DEVICE) for _ in range(Y)]
+                    W_D_y = [torch.empty(0).to(DEVICE) for _ in range(Y)]
+                    for i in range(len(D)):
+                        x, y, z = D[i, :-1], D[i, -1].long(), D[i, -2].long()
+                        D_y[y.item()] = torch.cat((D_y[y.item()], D[i].unsqueeze(0)))
+                        W_D_y[y.item()] = torch.cat((W_D_y[y.item()], W_D[i].unsqueeze(0)))
+
+                    # Perform GCR subset selection for each label
+                    for y in range(Y):
+                        k_y = self.budget // Y
+                        X_y = torch.empty(0, D.shape[1]).to(DEVICE)
+                        W_X_y = torch.empty(0).to(DEVICE)
+
+                        # Calculate initial residuals
+                        r = self.grad_l_sub(D_y[y], W_D_y[y], X_y, W_X_y, model)
+
+                        while len(X_y) <= k_y and self.l_sub(D_y[y], W_D_y[y], X_y, W_X_y, model) >= self.epsilon:
+                            # Find the data point with maximum residual
+                            e = torch.argmax(torch.abs(r))
+
+                            # Update per-class subset
+                            X_y = torch.cat((X_y, D_y[y][e].unsqueeze(0)))
+
+                            # Update per-class weights
+                            W_X_y = self.minimize_l_sub(D_y[y], W_D_y[y], X_y, model)
+
+                            # Update residuals
+                            r = self.grad_l_sub(D_y[y], W_D_y[y], X_y, W_X_y, model)
+
+                        # Update the overall subset and weights
+                        X = torch.cat((X, X_y))
+                        W_X = torch.cat((W_X, W_X_y))
+
+                # Update the memory set with the selected subset and weights
+                self.tasks[self.task_index].memory_x = X[:, :-2]
+                self.tasks[self.task_index].memory_y = X[:, -1].long()
+                self.tasks[self.task_index].memory_set_weights = W_X
+
+    def l_rep(self, theta, d, w):
+        """
+        Compute the representation loss as described in the paper.
+
+        Args:
+            theta: Current model parameters.
+            d: Data point consisting of (x, y, z).
+            w: Weight associated with the data point.
+
+        Returns:
+            Representation loss.
+        """
+        x, y, z = d
+        x = x.to(DEVICE)
+        y = y.to(DEVICE)
+        z = z.to(DEVICE)
+
+        # Forward pass to get the current logits
+        h_theta, _ = self.model(x, return_preactivations=True)
+
+        # Distillation loss
+        distill_loss = self.alpha * w * torch.norm(z - h_theta, dim=1) ** 2
+
+        # Cross-entropy loss
+        ce_loss = self.beta * w * nn.CrossEntropyLoss()(h_theta, y)
+
+        return distill_loss + ce_loss
+
+    def l_sub(self, D, W_D, X, W_X, model):
+        """
+        Compute the subset loss as described in the paper.
+
+        Args:
+            D: Full dataset.
+            W_D: Weights for the full dataset.
+            X: Subset of the dataset.
+            W_X: Weights for the subset.
+
+        Returns:
+            Subset loss.
+        """
+        # Compute the gradients for the full dataset
+        grads_D = []
+        for d, w in zip(D, W_D):
+            grad_D = torch.autograd.grad(self.l_rep(model.parameters(), d, w), model.parameters(), create_graph=True)
+            grads_D.append(grad_D)
+
+        # Compute the gradients for the subset
+        grads_X = []
+        for x, w in zip(X, W_X):
+            grad_X = torch.autograd.grad(self.l_rep(model.parameters(), x, w), model.parameters(), create_graph=True)
+            grads_X.append(grad_X)
+
+        # Sum of gradients for the full dataset
+        grad_sum_D = sum([torch.norm(grad, dim=0) ** 2 for grad in grads_D])
+
+        # Sum of gradients for the subset
+        grad_sum_X = sum([torch.norm(grad, dim=0) ** 2 for grad in grads_X])
+
+        # Subset loss
+        subset_loss = torch.norm(grad_sum_D - grad_sum_X) ** 2 + self.lambda_val * torch.sum(W_X ** 2)
+
+        return subset_loss
 
     def compute_gradients_at_ideal(
         self,
