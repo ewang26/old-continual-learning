@@ -830,8 +830,8 @@ class GCRMemorySetManager(MemorySetManager):
         self.lambda_val = 1  # need to figure out this hyperparameter
 
     def create_memory_set(
-        self, x: Float[Tensor, "n f"], y: Float[Tensor, "n"]
-    ) -> Tuple[Float[Tensor, "m f"], Float[Tensor, "m"]]:
+        self, x: Tensor, y: Tensor
+    ) -> Tuple[Tensor, Tensor]:
         """Initializes an empty memory replay buffer if training, called when task objects are created
         Else, use ideal model to generate GSS memory set
         Args:
@@ -849,10 +849,13 @@ class GCRMemorySetManager(MemorySetManager):
         if self.p == 1:
             self.memory_set_weights = torch.ones(x.shape[0])  # Initialize memory set weights to 1
             return x, y
-        
+
         self.memory_set_weights = torch.empty(0)  # Initialize memory set weights to empty tensor
         print(f"Initializing empty memory set with shapes: {self.memory_x_shape}, {self.memory_y_shape}")
-        return (
-            torch.empty(0, *self.memory_x_shape).to(x.device), 
-            torch.empty(0, *self.memory_y_shape).to(y.device)
-        )
+        
+        x_mem = torch.empty(0, *self.memory_x_shape).to(x.device)
+        y_mem = torch.empty(0, *self.memory_y_shape).to(y.device)
+        
+        print(f"x_mem shape: {x_mem.shape}, y_mem shape: {y_mem.shape}")
+        
+        return x_mem, y_mem
