@@ -307,6 +307,19 @@ class ContinualLearningManager(ABC):
                 criterion = nn.CrossEntropyLoss()
                 current_labels: List[int] = list(self._get_current_labels())
 
+                # Check if memory_x is empty
+                if self.tasks[self.task_index].memory_x.size(0) == 0:
+                    # Initialize memory_x with an appropriate shape
+                    feature_dim = model.feature_dim if hasattr(model, 'feature_dim') else expected_feature_dim
+                    self.tasks[self.task_index].memory_x = torch.empty(0, feature_dim).to(DEVICE)
+                
+                # Ensure memory_x is not empty
+                if self.tasks[self.task_index].memory_x.size(0) > 0:
+                    D = torch.empty(0, self.tasks[self.task_index].memory_x.shape[1] + 2).to(DEVICE)
+                else:
+                    raise ValueError("memory_x is empty and cannot be processed.")
+
+
                 # Initialize variables for GCR algorithm
                 # Before the problematic line
                 print(f"self.task_index: {self.task_index}")
