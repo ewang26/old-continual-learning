@@ -28,7 +28,6 @@ num_samples: [1, 1]
 train_debug: False
 
 # Continual learning hyperparameters
-#learning_manager: mnist_split
 learning_manager: cifar10_split
 
 # Training hyperparameters

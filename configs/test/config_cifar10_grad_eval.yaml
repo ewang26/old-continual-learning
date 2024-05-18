@@ -30,8 +30,6 @@ train_debug: False
 #p_arr: [1]
 #num_samples: [10] # if training, use only 1 sample
 
-# Continual learning hyperparameters
-#learning_manager: mnist_split
 learning_manager: cifar10_split
 
 # Training hyperparameters
