@@ -2,8 +2,8 @@
 #SBATCH -n 1
 #SBATCH -N 1
 #SBATCH -p gpu
-#SBATCH -t 3-00:00
-#SBATCH --mem=10000
+#SBATCH -t 0-01:00
+#SBATCH --mem=10GB
 #SBATCH --gres=gpu:1
 #SBATCH --job-name=continual_learning
 #SBATCH -o logs/train_eval_%j.out
@@ -11,37 +11,20 @@
 
 export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:128
 
-MAIN_PATH=/n/home12/thb489/continual-learning
-VENV_PATH=/n/home12/thb489/continual-learning/myenv
+# Define paths
+MAIN_PATH="/n/home12/thb489/continual-learning"
+VENV_PATH="/n/home12/thb489/continual-learning/myenv"
 
-source ${VENV_PATH}/bin/activate
+# Print paths for debugging
+echo "Main path: ${MAIN_PATH}"
+echo "Virtual environment path: ${VENV_PATH}"
 
-# module load python
+# Activate the virtual environment
+source "${VENV_PATH}/bin/activate"
 
-# python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/cifar10_train_ideal_model.yaml
+# Verify activation
+which python
 
-# echo "Ideal models trained"
-
-# cp -r ${MAIN_PATH}/models/cifar10_split/random/1 ${MAIN_PATH}/models/cifar_split/ideal_model
-
-# echo "Ideal models moved"
-
-# python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/class_balanced/config_cifar10_grad_eval.yaml
-# python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/class_balanced/config_cifar10_train.yaml
-
-# python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/lambda/config_cifar10_grad_eval.yaml
-# python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/lambda/config_cifar10_train.yaml
-
-python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/GSS/config_cifar10_grad_eval.yaml
-python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/GSS/config_cifar10_train.yaml
-
-python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/iCaRL/config_cifar10_grad_eval.yaml
-python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/iCaRL/config_cifar10_train.yaml
-
-python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/random/config_cifar10_grad_eval.yaml
-python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/random/config_cifar10_train.yaml
-
-# python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/kmeans/config_cifar10_grad_eval.yaml
-# python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/kmeans/config_cifar10_train.yaml
-
-# python ${MAIN_PATH}/save_similarity_block_v2.py --config ${MAIN_PATH}/configs/grad_eval/cifar10_rest.yaml
+# Run the scripts
+python "${MAIN_PATH}/main_batch.py" --config "${MAIN_PATH}/configs/test/config_cifar10_grad_eval.yaml"
+python "${MAIN_PATH}/main_batch.py" --config "${MAIN_PATH}/configs/test/config_cifar10_train.yaml"
