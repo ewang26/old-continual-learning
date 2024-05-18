@@ -3,7 +3,7 @@
 #SBATCH -N 1
 #SBATCH -p gpu
 #SBATCH -t 0-01:00
-#SBATCH --mem=10
+#SBATCH --mem=10GB
 #SBATCH --gres=gpu:1
 #SBATCH --job-name=continual_learning
 #SBATCH -o logs/train_eval_%j.out
@@ -11,10 +11,32 @@
 
 export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:128
 
-# Change to the main project directory
-cd /n/home12/thb489/continual-learning
+# Define paths
+MAIN_PATH="/n/home12/thb489/continual-learning"
+VENV_PATH="/n/home12/thb489/continual-learning/myenv"
 
-# Run the Python scripts using the absolute path to the virtual environment's Python executable
-/n/home12/thb489/continual-learning/myenv/bin/python main_batch.py --config configs/test/config_cifar10_grad_eval.yaml
-/n/home12/thb489/continual-learning/myenv/bin/python main_batch.py --config configs/test/config_cifar10_train.yaml
-#/n/home12/thb489/continual-learning/myenv/bin/python save_similarity_block_v2.py --config configs/grad_eval/cifar10_rest.yaml
+# Print paths for debugging
+echo "Main path: ${MAIN_PATH}"
+echo "Virtual environment path: ${VENV_PATH}"
+
+# Check current directory
+echo "Current directory: $(pwd)"
+
+# Set working directory explicitly
+cd ${MAIN_PATH}
+
+# Verify working directory
+echo "Changed to directory: $(pwd)"
+
+# Activate the virtual environment
+source "${VENV_PATH}/bin/activate"
+
+# Verify activation
+echo "Using Python from: $(which python)"
+
+# Print environment variables for debugging
+env
+
+# Run the scripts
+python "${MAIN_PATH}/main_batch.py" --config "${MAIN_PATH}/configs/test/config_cifar10_grad_eval.yaml"
+python "${MAIN_PATH}/main_batch.py" --config "${MAIN_PATH}/configs/test/config_cifar10_train.yaml"
