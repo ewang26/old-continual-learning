@@ -59,6 +59,6 @@ model:
 
 
 #model_save_dir: models/mnist_split #/1/
-#model_save_dir: models/cifar10_split
-model_load_dir: models/mnist_split
+model_save_dir: models/cifar10_split
+#model_load_dir: models/mnist_split
 #model_load_dir: models/cifar10_split
