@@ -133,6 +133,7 @@ def main(config: Config):
                 print(f'*** at task = {task_num}')
                 
                 if model_load_dir is not None:
+                    print("EVALUATING")
                     
                     for ideal_model_index in range(config.num_ideal_models):
                     
@@ -188,6 +189,7 @@ def main(config: Config):
                         #                                             test_dataloader = manager._get_task_dataloaders(use_memory_set = config.use_memory_set, 
                         #                                                                                             batch_size = 64)[0])
                 else:
+                    print("TRAINING")
                     # right now, training is only implemented for 1 sample per p
                     # update: commented out for training multiple models
                     #assert num_samples == 1

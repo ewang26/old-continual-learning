@@ -10,7 +10,7 @@ use_memory_set: True
 grad_type: ['past'] # can do 'past' or 'present'
 p: dummar_var
 use_random_img: False
-num_ideal_models: 1
+num_ideal_models: 2
 #num_samples: 10
 
 # for gradient evaluating
@@ -21,7 +21,7 @@ num_ideal_models: 1
 #num_samples: [10, 10, 10, 10, 10, 10, 10, 10, 10, 10]
 
 p_arr: [0.001, 0.002]
-num_samples: [1, 1]
+num_samples: [2, 2]
 
 #p_arr: [0.01]
 #num_samples: [1] 
