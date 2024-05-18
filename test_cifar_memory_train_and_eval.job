@@ -3,7 +3,7 @@
 #SBATCH -N 1
 #SBATCH -p gpu
 #SBATCH -t 0-01:00
-#SBATCH --mem=00010
+#SBATCH --mem=10
 #SBATCH --gres=gpu:1
 #SBATCH --job-name=continual_learning
 #SBATCH -o logs/train_eval_%j.out
@@ -14,9 +14,12 @@ export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:128
 MAIN_PATH=/n/home12/thb489/continual-learning
 VENV_PATH=/n/home12/thb489/continual-learning/myenv
 
+# Activate the virtual environment
 source ${VENV_PATH}/bin/activate
 
 python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/test/config_cifar10_grad_eval.yaml
 python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/test/config_cifar10_train.yaml
-
 #python ${MAIN_PATH}/save_similarity_block_v2.py --config ${MAIN_PATH}/configs/grad_eval/cifar10_rest.yaml
+
+# Deactivate the virtual environment (optional)
+deactivate
