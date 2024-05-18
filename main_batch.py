@@ -1,7 +1,10 @@
 #main_batch 
 
 from data import RandomMemorySetManager, KMeansMemorySetManager, \
-        LambdaMemorySetManager, GSSMemorySetManager, ClassBalancedReservoirSampling, iCaRL, GCRMemorySetManager
+        LambdaMemorySetManager, GSSMemorySetManager, ClassBalancedReservoirSampling, iCaRL
+
+from data import GCRMemorySetManager
+        
 from managers import MnistManagerSplit, Cifar10ManagerSplit, Cifar100ManagerSplit
 from configs.config import Config
 from pathlib import Path
@@ -108,8 +111,8 @@ def main(config: Config):
                 memory_set_manager = config.memory_set_manager(p, random_seed=random_seed)
             elif config.memory_set_manager == iCaRL:
                 memory_set_manager = config.memory_set_manager(p, n_classes = 2, random_seed=random_seed)
-
-
+            elif config.memory_set_manager == GCRMemorySetManager:
+                memory_set_manager = config.memory_set_manager(p, random_seed=random_seed)
             else:
                 raise ValueError(f"Unsupported memory set manager: {config.memory_set_manager}")
             
