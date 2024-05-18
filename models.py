@@ -92,9 +92,19 @@ class CifarNet(nn.Module):
         nn.init.constant_(self.out_block.weight, 0)
         nn.init.constant_(self.out_block.bias, 0)
 
-    def forward(self, x):
+    # def forward(self, x):
+    #     o = self.conv_block(x)
+    #     o = torch.flatten(o, 1)
+    #     o = self.linear_block(o)
+    #     o = self.out_block(o)
+    #     return o
+
+    def forward(self, x, return_preactivations=False):
         o = self.conv_block(x)
         o = torch.flatten(o, 1)
-        o = self.linear_block(o)
-        o = self.out_block(o)
-        return o
+        pre_o = self.linear_block(o)  # preactivations z
+        o = self.out_block(pre_o)  # logits h(x)
+        
+        if not return_preactivations:
+            return o
+        return o, pre_o  # return both logits and preactivations

@@ -53,7 +53,6 @@ class Task:
         if memory_set_manager.__class__.__name__ == 'GCRMemorySetManager':
             self.memory_set_manager = memory_set_manager
             self.memory_set_weights = memory_set_manager.memory_set_weights  # initialize weights for memory set
-            self.task_specific_object = memory_set_manager.task_specific_object  # initialize task-specific object
 
     def modify_memory(self, sample_x, sample_y, outputs=None, grad_sample=None, grad_batch=None):
 
