@@ -1,6 +1,4 @@
 #!/bin/bash
-
-##SBATCH -p shared # partition
 #SBATCH -n 1
 #SBATCH -N 1
 #SBATCH -p gpu
