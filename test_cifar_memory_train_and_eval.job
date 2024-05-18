@@ -11,11 +11,11 @@
 
 export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:128
 
-# Activate the virtual environment
-source /n/home12/thb489/continual-learning/myenv/bin/activate
-
 # Change to the main project directory
 cd /n/home12/thb489/continual-learning
+
+# Activate the virtual environment
+source myenv/bin/activate
 
 # Run the Python scripts
 python main_batch.py --config configs/test/config_cifar10_grad_eval.yaml
