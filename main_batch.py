@@ -114,6 +114,8 @@ def main(config: Config):
             else:
                 raise ValueError(f"Unsupported memory set manager: {config.memory_set_manager}")
             
+            print(f"Memory Selection Method: {config.memory_set_manager}")
+            
             manager = config.learning_manager(
                 memory_set_manager=memory_set_manager,
                 use_wandb=config.use_wandb,
