@@ -820,6 +820,8 @@ class GCRMemorySetManager(MemorySetManager):
         np.random.seed(random_seed)
         #initialize memory set weights
         self.memory_set_weights = None 
+        self.memory_x_shape = None
+        self.memory_y_shape = None
 
         # these are hyperparameters
         self.alpha = 0.1
@@ -839,6 +841,8 @@ class GCRMemorySetManager(MemorySetManager):
             (x_mem, y_mem) tuple.
         """
         self.memory_set_size = int(x.shape[0] * self.p)
+        self.memory_x_shape = x.shape[1:]
+        self.memory_y_shape = y.shape[1:]
 
         
         if self.p == 1:
