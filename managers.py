@@ -281,23 +281,25 @@ class ContinualLearningManager(ABC):
                     # self.tasks[self.task_index].memory_x = ... to modify memory_x
                     # self.tasks[self.task_index].memory_x = ... to modify memory_y
         
-            elif self.memory_set_manager.__class__.__name__ == 'LambdaMemorySetManager':
-                # assume we update for all the data
-                # take the entire training data, run a forward pass through the network
-                # train on D0.
-                # forward pass through full D0, store M0.
-                # train on M0 and D1.
-                # forward pass of just the D1 terms, store M1.
-                # using getting all the training data at once
-                terminal_train_dataloader = self._get_terminal_task_dataloader(full_batch=True)
-                criterion = nn.CrossEntropyLoss()   # is this necessary?
-                for batch_x, batch_y in terminal_train_dataloader:
-                    for param in model.parameters():
-                        param.grad = None
-                    outputs = model(batch_x)
-                    self.tasks[self.task_index].modify_memory(batch_x, batch_y, outputs=outputs)
+        elif self.memory_set_manager.__class__.__name__ == 'LambdaMemorySetManager':
+            # assume we update for all the data
+            # take the entire training data, run a forward pass through the network
+            # train on D0.
+            # forward pass through full D0, store M0.
+            # train on M0 and D1.
+            # forward pass of just the D1 terms, store M1.
+            # using getting all the training data at once
+            terminal_train_dataloader = self._get_terminal_task_dataloader(full_batch=True)
+            criterion = nn.CrossEntropyLoss()   # is this necessary?
+            for batch_x, batch_y in terminal_train_dataloader:
+                for param in model.parameters():
+                    param.grad = None
+                outputs = model(batch_x)
+                self.tasks[self.task_index].modify_memory(batch_x, batch_y, outputs=outputs)
 
-                    
+                
+        elif self.memory_set_manager.__class__.__name__ == 'GCRMemorySetManager':
+            if not (p == 1):
                 terminal_train_dataloader = self._get_terminal_task_dataloader()
 
                 # Reset criterion just in case
@@ -333,6 +335,37 @@ class ContinualLearningManager(ABC):
                 W_D = torch.empty(0).to(DEVICE)
                 X = torch.empty(0, self.tasks[self.task_index].memory_x.shape[1] + 2).to(DEVICE)
                 W_X = torch.empty(0).to(DEVICE)
+
+                # Iterate through samples one by one
+                for batch_x, batch_y in terminal_train_dataloader:
+                    # Compute gradient for the new sample
+                    for param in model.parameters():
+                        param.grad = None
+                    h_x, z = model(batch_x.to(DEVICE), return_preactivations=True)
+                    grad_sample = self.get_forward_pass_gradients(batch_x, batch_y, model, criterion, current_labels)
+
+                    # Append the new sample and its gradient to D
+                    D = torch.cat((D, torch.cat((batch_x.to(DEVICE), batch_y.unsqueeze(1).to(DEVICE), h_x), dim=1).unsqueeze(0)))
+
+                    # Initialize weights for the new sample
+                    W_D = torch.cat((W_D, torch.tensor([1.0]).to(DEVICE)))
+
+                    # Get the number of unique labels in the dataset
+                    Y = len(torch.unique(torch.cat((self.tasks[self.task_index].memory_y, batch_y)).to(DEVICE)))
+
+                    # Partition dataset D and weights W_D based on labels
+                    D_y = [torch.empty(0, D.shape[1]).to(DEVICE) for _ in range(Y)]
+                    W_D_y = [torch.empty(0).to(DEVICE) for _ in range(Y)]
+                    for i in range(len(D)):
+                        x, y, z = D[i, :-1], D[i, -1].long(), D[i, -2].long()
+                        D_y[y.item()] = torch.cat((D_y[y.item()], D[i].unsqueeze(0)))
+                        W_D_y[y.item()] = torch.cat((W_D_y[y.item()], W_D[i].unsqueeze(0)))
+
+                    # Perform GCR subset selection for each label
+                    for y in range(Y):
+                        k_y = self.budget // Y
+                        X_y = torch.empty(0, D.shape[1]).to(DEVICE)
+                        W_X_y = torch.empty(0).to(DEVICE)
 
                         # Calculate initial residuals
                         r = self.grad_l_sub(D_y[y], W_D_y[y], X_y, W_X_y, model)
