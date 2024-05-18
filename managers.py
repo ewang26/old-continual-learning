@@ -298,7 +298,7 @@ class ContinualLearningManager(ABC):
                 self.tasks[self.task_index].modify_memory(batch_x, batch_y, outputs=outputs)
 
                 
-        elif self.memory_set_manager.__class__.__name__ in ['GCRMemorySetManager']:
+        elif self.memory_set_manager.__class__.__name__ == 'GCRMemorySetManager':
             if not (p == 1):
                 # Get a 1-batch dataloader
                 terminal_train_dataloader = self._get_terminal_task_dataloader()
@@ -308,9 +308,9 @@ class ContinualLearningManager(ABC):
                 current_labels: List[int] = list(self._get_current_labels())
 
                 # Initialize variables for GCR algorithm
-                D = torch.empty(0, batch_x.shape[1] + 2).to(DEVICE)
+                D = torch.empty(0, self.tasks[self.task_index].memory_x.shape[1] + 2).to(DEVICE)
                 W_D = torch.empty(0).to(DEVICE)
-                X = torch.empty(0, batch_x.shape[1] + 2).to(DEVICE)
+                X = torch.empty(0, self.tasks[self.task_index].memory_x.shape[1] + 2).to(DEVICE)
                 W_X = torch.empty(0).to(DEVICE)
 
                 # Iterate through samples one by one
