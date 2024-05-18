@@ -128,7 +128,7 @@ def main(config: Config):
             final_backward_transfers = []
 
             for task_num in range(num_tasks):
-                print(f'*** at task = {sample_num}')
+                print(f'*** at task = {task_num}')
                 
                 if model_load_dir is not None:
                     
