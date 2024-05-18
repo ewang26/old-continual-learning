@@ -50,7 +50,7 @@ class Task:
         if memory_set_manager.__class__.__name__ == 'LambdaMemorySetManager':
             self.memory_set_manager = memory_set_manager
 
-       if memory_set_manager.__class__.__name__ == 'GCRMemorySetManager':
+        if memory_set_manager.__class__.__name__ == 'GCRMemorySetManager':
             self.memory_set_manager = memory_set_manager
             self.memory_set_weights = torch.empty(0) # Initialize weights for memory set
 
