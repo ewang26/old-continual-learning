@@ -387,7 +387,8 @@ class LambdaMemorySetManager(MemorySetManager):
             class_p = torch.softmax(outputs[i], dim=0)
 
             # create a matrix of p @ (1-p).T to represent decision uncertainty at each class
-            decision_uncertainty = torch.ger(class_p, (1 - class_p).T)
+            #decision_uncertainty = torch.ger(class_p, (1 - class_p).T)
+            decision_uncertainty = torch.ger(class_p, (1 - class_p).mT)
 
             # calculate the trace of this matrix to assess the uncertainty in classification across multiple classes
             # the trace equivalent to the hessian of the loss wrt the output layer

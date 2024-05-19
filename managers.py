@@ -153,7 +153,6 @@ class ContinualLearningManager(ABC):
         for batch_x, batch_y in test_dataloader:
             batch_x = batch_x.to(DEVICE)
             batch_y = batch_y.to(DEVICE)
-
             outputs = model(batch_x)
 
             # Only select outputs for current labels
