@@ -265,6 +265,9 @@ class KMeansMemorySetManager(MemorySetManager):
         memory_x_concat = torch.cat(list(memory_x.values()), dim=0)
         memory_y_concat = torch.cat(list(memory_y.values()), dim=0).view(-1)
         
+        print("MEMORY SHAPES")
+        print(memory_x_concat.shape)
+
         return memory_x_concat, memory_y_concat
 
 # Jonathan Lambda Method
@@ -819,7 +822,7 @@ class GCRMemorySetManager(MemorySetManager):
         self.generator = torch.Generator().manual_seed(random_seed)
         np.random.seed(random_seed)
         # Initialize memory set weights
-        self.memory_set_weights = None
+        #self.memory_set_weights = None
         self.memory_x_shape = None
         self.memory_y_shape = None
 
@@ -833,7 +836,7 @@ class GCRMemorySetManager(MemorySetManager):
         self, x: Tensor, y: Tensor
     ) -> Tuple[Tensor, Tensor]:
         """Initializes an empty memory replay buffer if training, called when task objects are created
-        Else, use ideal model to generate GSS memory set
+        Else, use ideal model to generate GCR memory set
         Args:
             x: x data.
             y: y data.
