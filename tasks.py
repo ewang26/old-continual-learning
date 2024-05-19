@@ -71,6 +71,16 @@ class Task:
                 sample_y,
                 outputs
             )
+
+        elif self.memory_set_manager.__class__.__name__ == 'GSSMemorySetManager':
+            self.memory_x, self.memory_y, self.C_arr = self.memory_set_manager.update_GSS_greedy(
+                self.memory_x, 
+                self.memory_y, 
+                self.C_arr, 
+                sample_x,
+                sample_y,
+                grad_sample, 
+                grad_batch) #update buffer + scores
             
         else:
             raise NotImplementedError("Only Lambda and GSS Memory Selection methods update memory set in runtime.")
