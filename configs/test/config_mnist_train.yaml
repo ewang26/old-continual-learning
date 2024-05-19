@@ -15,8 +15,8 @@ num_ideal_models: None
 # device: cpu
 
 # for gradient evaluating
-p_arr: [0.001, 0.002]
-num_samples: [2, 2]
+p_arr: [0.0011, 0.0021]
+num_samples: [1, 1]
 #p_arr: [0.001, 1]
 #num_samples: [10, 10, 10, 10, 10, 10, 10, 10, 10]
 #num_samples: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
