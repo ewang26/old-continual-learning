@@ -14,8 +14,8 @@ num_ideal_models: 1
 num_centroids: 4
 
 # for gradient evaluating
-p_arr: [0.001, 0.002]
-num_samples: [1, 1]
+p_arr: [0.0011, 0.0021, 0.0051]
+num_samples: [1, 1, 1]
 #p_arr: [0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1]
 #num_samples: [2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
 #num_samples: [1, 1, 1, 1, 1, 1, 1, 1, 1]
