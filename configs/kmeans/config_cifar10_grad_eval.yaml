@@ -10,7 +10,7 @@ use_memory_set: True
 grad_type: ['past'] # can do 'past' or 'present'
 p: dummar_var
 use_random_img: False
-num_ideal_models: 2
+# num_ideal_models: 2
 num_centroids: 4
 #num_samples: 10
 num_ideal_models: 10
