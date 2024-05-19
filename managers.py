@@ -288,6 +288,8 @@ class ContinualLearningManager(ABC):
             terminal_train_dataloader = self._get_terminal_task_dataloader(full_batch=True)
             criterion = nn.CrossEntropyLoss()   # is this necessary?
             for batch_x, batch_y in terminal_train_dataloader:
+                #added line below:
+                batch_x, batch_y = batch_x.to(DEVICE), batch_y.to(DEVICE)
                 for param in model.parameters():
                     param.grad = None
                 outputs = model(batch_x)

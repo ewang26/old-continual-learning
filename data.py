@@ -363,7 +363,9 @@ class LambdaMemorySetManager(MemorySetManager):
     def create_memory_set(self, x: Float[Tensor, "n f"], y: Float[Tensor, "n 1"]):
         # initializing memory sets as empty for initial task (which uses all the data)
         # self.memory_set_size = int(x.shape[0] * self.p)
-        return torch.empty(0), torch.empty(0)
+        #return torch.empty(0), torch.empty(0)
+        return torch.empty(0, device=DEVICE), torch.empty(0, device=DEVICE)
+
 
     def update_memory_lambda(self, memory_x,  memory_y, sample_x, sample_y, outputs):
         """
@@ -394,7 +396,7 @@ class LambdaMemorySetManager(MemorySetManager):
             trace_list.append(decision_trace.item())
         print(trace_list[:10])
         # calculate size of memory set to create 
-        # NOTE: this does class balancing if data in the tasks are already balanced
+        #note: this does class balancing if data in the tasks are already balanced
             # more work must be done to create constant memory size for each class regardless of initial class distribution in task space
         memory_size = int(terminal_task_size*self.p)
 
@@ -406,8 +408,8 @@ class LambdaMemorySetManager(MemorySetManager):
         # print(sample_x[0])
 
         # finding the memory set of terminal task and concatenating it to the existing memory set
-        memory_x = torch.cat((memory_x, sample_x[desired_indx]))
-        memory_y = torch.cat((memory_y, sample_y[desired_indx]))
+        memory_x = torch.cat((memory_x, sample_x[desired_indx].to(DEVICE)))
+        memory_y = torch.cat((memory_y, sample_y[desired_indx].to(DEVICE)))
         return memory_x, memory_y.long()
 
 
