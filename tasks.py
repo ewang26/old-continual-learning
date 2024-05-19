@@ -41,8 +41,12 @@ class Task:
         self.memory_x, self.memory_y = memory_set_manager.create_memory_set(
             train_x, train_y
         )
+        print("in tasks:")
+        print(self.memory_x.shape)
         self.task_labels = task_labels
         self.active = False
+
+        print()
 
         if memory_set_manager.__class__.__name__ == 'GSSMemorySetManager':
             self.memory_set_manager = memory_set_manager # save the manager for future use
