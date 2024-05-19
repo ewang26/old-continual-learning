@@ -273,3 +273,4 @@ if __name__ == "__main__":
     config = Config(config_dict)
 
     main(config)
+    print('MAIN_BATCH FINISHED')
