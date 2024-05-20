@@ -505,6 +505,7 @@ class ContinualLearningManager(ABC):
 
 
 
+
     # def l_sub(self, D, W_D, X, W_X, model):
 
     #     # Compute the gradients for the full dataset
@@ -574,18 +575,22 @@ class ContinualLearningManager(ABC):
     #     return grad_diff
 
     def grad_l_sub(self, D_x, D_y, D_z, W_D, X, X_y, Z, W_X, model):
-    # Move the data to the appropriate device
+        # Move the data to the appropriate device
         D_x, D_y, D_z, X, X_y, Z = D_x.to(DEVICE), D_y.to(DEVICE), D_z.to(DEVICE), X.to(DEVICE), X_y.to(DEVICE), Z.to(DEVICE)
 
         # Compute the gradients for the full dataset
         model.zero_grad()
         loss_D = sum([self.l_rep(model, x, y, z, w) for x, y, z, w in zip(D_x, D_y, D_z, W_D)])
+        if not isinstance(loss_D, torch.Tensor):
+            loss_D = torch.tensor(loss_D, dtype=torch.float32, device=DEVICE)
         loss_D.backward()
         grads_D = [param.grad.clone() for param in model.parameters()]
 
         # Compute the gradients for the subset
         model.zero_grad()
         loss_X = sum([self.l_rep(model, x, y, z, w) for x, y, z, w in zip(X, X_y, Z, W_X)])
+        if not isinstance(loss_X, torch.Tensor):
+            loss_X = torch.tensor(loss_X, dtype=torch.float32, device=DEVICE)
         loss_X.backward()
         grads_X = [param.grad.clone() for param in model.parameters()]
 
@@ -593,6 +598,7 @@ class ContinualLearningManager(ABC):
         grad_diff = [grad_d - grad_x for grad_d, grad_x in zip(grads_D, grads_X)]
 
         return grad_diff
+
 
 
 
