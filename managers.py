@@ -318,7 +318,7 @@ class ContinualLearningManager(ABC):
         self.tasks[self.task_index].memory_x = self.tasks[self.task_index].memory_x.to(DEVICE)
         self.tasks[self.task_index].memory_y = self.tasks[self.task_index].memory_y.to(DEVICE)
         self.tasks[self.task_index].memory_z = self.tasks[self.task_index].memory_z.to(DEVICE)
-        self.tasks[self.task_index].memory_weights = self.tasks[self.task_index].memory_weights.to(DEVICE)
+        self.tasks[self.task_index].memory_set_weights = self.tasks[self.task_index].memory_set_weights.to(DEVICE)
 
         # Get the preactivations for the new samples
         _, preactivations = model(batch_x, return_preactivations=True)
@@ -342,7 +342,7 @@ class ContinualLearningManager(ABC):
             memory_x_y[y.item()] = torch.cat((memory_x_y[y.item()], x.unsqueeze(0)))
             memory_y_y[y.item()] = torch.cat((memory_y_y[y.item()], y.unsqueeze(0)))
             memory_z_y[y.item()] = torch.cat((memory_z_y[y.item()], z.unsqueeze(0)))
-            memory_weights_y[y.item()] = torch.cat((memory_weights_y[y.item()], self.tasks[self.task_index].memory_weights[i].unsqueeze(0)))
+            memory_weights_y[y.item()] = torch.cat((memory_weights_y[y.item()], self.tasks[self.task_index].memory_set_weights[i].unsqueeze(0)))
 
         # Perform GCR subset selection for each label
         updated_memory_x = torch.empty(0, self.tasks[self.task_index].memory_x.shape[1]).to(DEVICE)
@@ -396,30 +396,53 @@ class ContinualLearningManager(ABC):
 
         return distill_loss + ce_loss
 
-    def l_sub(self, D, W_D, X, W_X, model):
+    # def l_sub(self, D, W_D, X, W_X, model):
+
+    #     # Compute the gradients for the full dataset
+    #     grads_D = []
+    #     for d, w in zip(D, W_D):
+    #         grad_D = torch.autograd.grad(self.l_rep(model.parameters(), d, w), model.parameters(), create_graph=True)
+    #         grads_D.append(grad_D)
+
+    #     # Compute the gradients for the subset
+    #     grads_X = []
+    #     for x, w in zip(X, W_X):
+    #         grad_X = torch.autograd.grad(self.l_rep(model.parameters(), x, w), model.parameters(), create_graph=True)
+    #         grads_X.append(grad_X)
+
+    #     # Sum of gradients for the full dataset
+    #     grad_sum_D = sum([torch.norm(grad, dim=0) ** 2 for grad in grads_D])
+
+    #     # Sum of gradients for the subset
+    #     grad_sum_X = sum([torch.norm(grad, dim=0) ** 2 for grad in grads_X])
+
+    #     # Subset loss
+    #     subset_loss = torch.norm(grad_sum_D - grad_sum_X) ** 2 + self.lambda_val * torch.sum(W_X ** 2)
+
+    #     return subset_loss
+
+    def l_sub(self, D_x, D_y, D_z, W_D, X, X_y, Z, W_X, model):
+        # Move the data to the appropriate device
+        D_x, D_y, D_z, X, X_y, Z = D_x.to(DEVICE), D_y.to(DEVICE), D_z.to(DEVICE), X.to(DEVICE), X_y.to(DEVICE), Z.to(DEVICE)
 
         # Compute the gradients for the full dataset
-        grads_D = []
-        for d, w in zip(D, W_D):
-            grad_D = torch.autograd.grad(self.l_rep(model.parameters(), d, w), model.parameters(), create_graph=True)
-            grads_D.append(grad_D)
+        model.zero_grad()
+        loss_D = sum([self.l_rep(model, x, y, z, w) for x, y, z, w in zip(D_x, D_y, D_z, W_D)])
+        loss_D.backward()
+        grads_D = [param.grad.clone() for param in model.parameters()]
 
         # Compute the gradients for the subset
-        grads_X = []
-        for x, w in zip(X, W_X):
-            grad_X = torch.autograd.grad(self.l_rep(model.parameters(), x, w), model.parameters(), create_graph=True)
-            grads_X.append(grad_X)
-
-        # Sum of gradients for the full dataset
-        grad_sum_D = sum([torch.norm(grad, dim=0) ** 2 for grad in grads_D])
-
-        # Sum of gradients for the subset
-        grad_sum_X = sum([torch.norm(grad, dim=0) ** 2 for grad in grads_X])
+        model.zero_grad()
+        loss_X = sum([self.l_rep(model, x, y, z, w) for x, y, z, w in zip(X, X_y, Z, W_X)])
+        loss_X.backward()
+        grads_X = [param.grad.clone() for param in model.parameters()]
 
         # Subset loss
-        subset_loss = torch.norm(grad_sum_D - grad_sum_X) ** 2 + self.lambda_val * torch.sum(W_X ** 2)
+        subset_loss = sum([torch.norm(grad_d - grad_x) ** 2 for grad_d, grad_x in zip(grads_D, grads_X)])
+        subset_loss += self.memory_set_manager.lambda_val * torch.sum(W_X ** 2)
 
         return subset_loss
+
 
     def compute_gradients_at_ideal(
         self,
