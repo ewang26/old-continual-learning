@@ -538,6 +538,7 @@ class ContinualLearningManager(ABC):
         self.tasks[self.task_index].memory_set_weights = updated_memory_weights
 
 
+
     # def l_rep(self, model, x, y, z, w):
     #     # Move the data to the appropriate device
     #     x, y, z = x.to(DEVICE), y.to(DEVICE), z.to(DEVICE)
@@ -559,23 +560,6 @@ class ContinualLearningManager(ABC):
     #     ce_loss = self.memory_set_manager.beta * w * nn.CrossEntropyLoss()(logits, y)
 
     #     return distill_loss + ce_loss
-
-    def l_rep(self, model, x, y, z, w):
-        # Move the data to the appropriate device
-        x, y, z = x.to(DEVICE), y.to(DEVICE), z.to(DEVICE)
-
-        logits, h_theta = model(x, return_preactivations=True)
-        print(f"Shape of z: {z.shape}, Shape of h_theta: {h_theta.shape}")
-
-        # Ensure z and h_theta are 1D
-        if z.dim() != 1 or h_theta.dim() != 1:
-            raise ValueError(f"Expected 1D tensors, got z with shape {z.shape} and h_theta with shape {h_theta.shape}")
-
-        distill_loss = self.memory_set_manager.alpha * w * torch.norm(z - h_theta, dim=0) ** 2
-        ce_loss = self.memory_set_manager.beta * w * nn.CrossEntropyLoss()(logits, y.long())  # Cast y to LongTensor
-
-        return distill_loss + ce_loss
-
 
 
 
@@ -621,6 +605,7 @@ class ContinualLearningManager(ABC):
         return distill_loss + ce_loss
 
 
+
     
     # def grad_l_sub(self, D_x, D_y, D_z, W_D, X, X_y, Z, W_X, model):
     #     # Move the data to the appropriate device
@@ -650,6 +635,10 @@ class ContinualLearningManager(ABC):
         # Compute the gradients for the full dataset
         model.zero_grad()
         losses_D = [self.l_rep(model, x, y, z, w) for x, y, z, w in zip(D_x, D_y, D_z, W_D)]
+        print(f"losses_D: {losses_D}")  # Debug: Print losses_D
+        if not losses_D:
+            raise ValueError("losses_D is empty")
+
         loss_D = torch.sum(torch.stack(losses_D))
         loss_D.backward()
         grads_D = [param.grad.clone() for param in model.parameters()]
@@ -657,6 +646,10 @@ class ContinualLearningManager(ABC):
         # Compute the gradients for the subset
         model.zero_grad()
         losses_X = [self.l_rep(model, x, y, z, w) for x, y, z, w in zip(X, X_y, Z, W_X)]
+        print(f"losses_X: {losses_X}")  # Debug: Print losses_X
+        if not losses_X:
+            raise ValueError("losses_X is empty")
+
         loss_X = torch.sum(torch.stack(losses_X))
         loss_X.backward()
         grads_X = [param.grad.clone() for param in model.parameters()]
@@ -665,6 +658,7 @@ class ContinualLearningManager(ABC):
         grad_diff = [grad_d - grad_x for grad_d, grad_x in zip(grads_D, grads_X)]
 
         return grad_diff
+
 
 
 
