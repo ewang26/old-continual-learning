@@ -332,10 +332,12 @@ class ContinualLearningManager(ABC):
         Y = len(torch.unique(self.tasks[self.task_index].memory_y))
 
         # Partition the memory set and weights based on labels
+        # Initialize partitioned memory sets
         memory_x_y = [torch.empty(0, self.tasks[self.task_index].memory_x.shape[1]).to(DEVICE) for _ in range(Y)]
         memory_y_y = [torch.empty(0).to(DEVICE) for _ in range(Y)]
         memory_z_y = [torch.empty(0, self.tasks[self.task_index].memory_z.shape[1]).to(DEVICE) for _ in range(Y)]
-        memory_weights_y = [torch.empty(0).to(DEVICE) for _ in range(Y)]
+        memory_weights_y = [torch.ones(0).to(DEVICE) for _ in range(Y)]  # Initialize weights to ones instead of empty
+
 
         for i in range(len(self.tasks[self.task_index].memory_x)):
             x, y, z = self.tasks[self.task_index].memory_x[i], self.tasks[self.task_index].memory_y[i].long(), self.tasks[self.task_index].memory_z[i]
