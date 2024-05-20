@@ -29,7 +29,7 @@ num_samples: [10]
 #p_arr: [0.01]
 #num_samples: [1] 
 
-#debugging 
+#debugging r
 train_debug: False
 
 #training

@@ -48,4 +48,4 @@ source "${VENV_PATH}/bin/activate"
 
 
 # # # Run additional script for saving similarity blocks
-python ${MAIN_PATH}/save_similarity_block_v2.py --config ${MAIN_PATH}/configs/grad_eval/cifar10_random.yaml
+python ${MAIN_PATH}/save_similarity_block_v2.py --config ${MAIN_PATH}/configs/grad_eval/cifar10_class_balanced.yaml

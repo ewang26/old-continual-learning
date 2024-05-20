@@ -185,6 +185,7 @@ if __name__ == '__main__':
         config_dict = yaml.load(f, Loader=yaml.FullLoader)
 
     main(config_dict)
+    print("comparison done!")
 
 
 
