@@ -474,6 +474,10 @@ class ContinualLearningManager(ABC):
         # Get the preactivations for the new samples
         _, preactivations = model(batch_x, return_preactivations=True)
 
+        # Initialize memory_z if it is None
+        if self.tasks[self.task_index].memory_z is None:
+            self.tasks[self.task_index].memory_z = torch.empty((0, preactivations.shape[1]), device=DEVICE)
+
         # Concatenate the new sample, its label, and preactivations to the memory set
         self.tasks[self.task_index].memory_x = torch.cat((self.tasks[self.task_index].memory_x, batch_x))
         self.tasks[self.task_index].memory_y = torch.cat((self.tasks[self.task_index].memory_y, batch_y))
@@ -481,26 +485,28 @@ class ContinualLearningManager(ABC):
         self.tasks[self.task_index].memory_set_weights = torch.cat((self.tasks[self.task_index].memory_set_weights, torch.ones(batch_x.shape[0]).to(DEVICE)))
 
         # Get the number of unique labels in the updated memory set
-        Y = len(torch.unique(self.tasks[self.task_index].memory_y))
+        unique_labels = torch.unique(self.tasks[self.task_index].memory_y)
+        Y = len(unique_labels)
 
         # Partition the memory set and weights based on labels
-        memory_x_y = [torch.empty(0, self.tasks[self.task_index].memory_x.shape[1]).to(DEVICE) for _ in range(Y)]
-        memory_y_y = [torch.empty(0).to(DEVICE) for _ in range(Y)]
-        memory_z_y = [torch.empty(0, self.tasks[self.task_index].memory_z.shape[1]).to(DEVICE) for _ in range(Y)]
-        memory_weights_y = [torch.ones(0).to(DEVICE) for _ in range(Y)]  # Initialize weights to ones
+        memory_x_y = [torch.empty((0, self.tasks[self.task_index].memory_x.shape[1]), device=DEVICE) for _ in range(Y)]
+        memory_y_y = [torch.empty((0,), dtype=torch.long, device=DEVICE) for _ in range(Y)]
+        memory_z_y = [torch.empty((0, self.tasks[self.task_index].memory_z.shape[1]), device=DEVICE) for _ in range(Y)]
+        memory_weights_y = [torch.ones((0,), device=DEVICE) for _ in range(Y)]  # Initialize weights to ones
 
         for i in range(len(self.tasks[self.task_index].memory_x)):
             x, y, z = self.tasks[self.task_index].memory_x[i], self.tasks[self.task_index].memory_y[i].long(), self.tasks[self.task_index].memory_z[i]
-            memory_x_y[y.item()] = torch.cat((memory_x_y[y.item()], x.unsqueeze(0)))
-            memory_y_y[y.item()] = torch.cat((memory_y_y[y.item()], y.unsqueeze(0)))
-            memory_z_y[y.item()] = torch.cat((memory_z_y[y.item()], z.unsqueeze(0)))
-            memory_weights_y[y.item()] = torch.cat((memory_weights_y[y.item()], self.tasks[self.task_index].memory_set_weights[i].unsqueeze(0)))
+            label_index = (unique_labels == y).nonzero(as_tuple=True)[0].item()
+            memory_x_y[label_index] = torch.cat((memory_x_y[label_index], x.unsqueeze(0)))
+            memory_y_y[label_index] = torch.cat((memory_y_y[label_index], y.unsqueeze(0)))
+            memory_z_y[label_index] = torch.cat((memory_z_y[label_index], z.unsqueeze(0)))
+            memory_weights_y[label_index] = torch.cat((memory_weights_y[label_index], self.tasks[self.task_index].memory_set_weights[i].unsqueeze(0)))
 
         # Perform GCR subset selection for each label
-        updated_memory_x = torch.empty(0, self.tasks[self.task_index].memory_x.shape[1]).to(DEVICE)
-        updated_memory_y = torch.empty(0).to(DEVICE)
-        updated_memory_z = torch.empty(0, self.tasks[self.task_index].memory_z.shape[1]).to(DEVICE)
-        updated_memory_weights = torch.empty(0).to(DEVICE)
+        updated_memory_x = torch.empty((0, self.tasks[self.task_index].memory_x.shape[1]), device=DEVICE)
+        updated_memory_y = torch.empty((0,), dtype=torch.long, device=DEVICE)
+        updated_memory_z = torch.empty((0, self.tasks[self.task_index].memory_z.shape[1]), device=DEVICE)
+        updated_memory_weights = torch.empty((0,), device=DEVICE)
 
         for y in range(Y):
             k_y = self.memory_set_manager.memory_set_size // Y
@@ -509,9 +515,9 @@ class ContinualLearningManager(ABC):
             if len(memory_x_y[y]) == 0:
                 continue
 
-            X_y = torch.empty(0, self.tasks[self.task_index].memory_x.shape[1]).to(DEVICE)
-            Z_y = torch.empty(0, self.tasks[self.task_index].memory_z.shape[1]).to(DEVICE)
-            W_X_y = torch.ones(0).to(DEVICE)  # Initialize weights to ones
+            X_y = torch.empty((0, self.tasks[self.task_index].memory_x.shape[1]), device=DEVICE)
+            Z_y = torch.empty((0, self.tasks[self.task_index].memory_z.shape[1]), device=DEVICE)
+            W_X_y = torch.ones((0,), device=DEVICE)  # Initialize weights to ones
 
             # Calculate initial residuals
             print(f"memory_x_y[{y}]: {memory_x_y[y]}, memory_y_y[{y}]: {memory_y_y[y]}, memory_z_y[{y}]: {memory_z_y[y]}, memory_weights_y[{y}]: {memory_weights_y[y]}, X_y: {X_y}, Z_y: {Z_y}, W_X_y: {W_X_y}")
@@ -542,6 +548,7 @@ class ContinualLearningManager(ABC):
         self.tasks[self.task_index].memory_y = updated_memory_y
         self.tasks[self.task_index].memory_z = updated_memory_z
         self.tasks[self.task_index].memory_set_weights = updated_memory_weights
+
 
 
 
