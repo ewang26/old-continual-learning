@@ -361,7 +361,7 @@ class ContinualLearningManager(ABC):
             W_X_y = torch.empty(0).to(DEVICE)
 
             # Calculate initial residuals
-            r = self.grad_l_sub(memory_x_y[y], memory_y_y[y], memory_z_y[y], memory_weights_y[y], X_y, memory_y_y[y][:len(X_y)], Z_y, W_X_y, model)
+            r = self.l_sub(memory_x_y[y], memory_y_y[y], memory_z_y[y], memory_weights_y[y], X_y, memory_y_y[y][:len(X_y)], Z_y, W_X_y, model)
 
             while len(X_y) <= k_y and self.l_sub(memory_x_y[y], memory_y_y[y], memory_z_y[y], memory_weights_y[y], X_y, memory_y_y[y][:len(X_y)], Z_y, W_X_y, model) >= self.memory_set_manager.epsilon:
                 # Find the data point with maximum residual
@@ -375,7 +375,7 @@ class ContinualLearningManager(ABC):
                 W_X_y = self.minimize_l_sub(memory_x_y[y], memory_y_y[y], memory_z_y[y], memory_weights_y[y], X_y, memory_y_y[y][:len(X_y)], Z_y, model)
 
                 # Update residuals
-                r = self.grad_l_sub(memory_x_y[y], memory_y_y[y], memory_z_y[y], memory_weights_y[y], X_y, memory_y_y[y][:len(X_y)], Z_y, W_X_y, model)
+                r = self.l_sub(memory_x_y[y], memory_y_y[y], memory_z_y[y], memory_weights_y[y], X_y, memory_y_y[y][:len(X_y)], Z_y, W_X_y, model)
 
             # Update the overall subset and weights
             updated_memory_x = torch.cat((updated_memory_x, X_y))
