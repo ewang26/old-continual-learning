@@ -504,6 +504,11 @@ class ContinualLearningManager(ABC):
 
         for y in range(Y):
             k_y = self.memory_set_manager.memory_set_size // Y
+
+            # If there are no samples for this label, skip
+            if len(memory_x_y[y]) == 0:
+                continue
+
             X_y = torch.empty(0, self.tasks[self.task_index].memory_x.shape[1]).to(DEVICE)
             Z_y = torch.empty(0, self.tasks[self.task_index].memory_z.shape[1]).to(DEVICE)
             W_X_y = torch.ones(0).to(DEVICE)  # Initialize weights to ones
@@ -537,6 +542,7 @@ class ContinualLearningManager(ABC):
         self.tasks[self.task_index].memory_y = updated_memory_y
         self.tasks[self.task_index].memory_z = updated_memory_z
         self.tasks[self.task_index].memory_set_weights = updated_memory_weights
+
 
 
 
