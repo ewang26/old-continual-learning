@@ -531,27 +531,22 @@ class ContinualLearningManager(ABC):
 
     #     return subset_loss
 
-    def l_sub(self, D_x, D_y, D_z, W_D, X, X_y, Z, W_X, model):
+    def l_rep(self, model, x, y, z, w):
         # Move the data to the appropriate device
-        D_x, D_y, D_z, X, X_y, Z = D_x.to(DEVICE), D_y.to(DEVICE), D_z.to(DEVICE), X.to(DEVICE), X_y.to(DEVICE), Z.to(DEVICE)
+        x, y, z = x.to(DEVICE), y.to(DEVICE), z.to(DEVICE)
 
-        # Compute the gradients for the full dataset
-        model.zero_grad()
-        loss_D = sum([self.l_rep(model, x, y, z, w) for x, y, z, w in zip(D_x, D_y, D_z, W_D)])
-        loss_D.backward()
-        grads_D = [param.grad.clone() for param in model.parameters()]
+        logits, h_theta = model(x, return_preactivations=True)
+        print(f"Shape of z: {z.shape}, Shape of h_theta: {h_theta.shape}")
 
-        # Compute the gradients for the subset
-        model.zero_grad()
-        loss_X = sum([self.l_rep(model, x, y, z, w) for x, y, z, w in zip(X, X_y, Z, W_X)])
-        loss_X.backward()
-        grads_X = [param.grad.clone() for param in model.parameters()]
+        # Ensure z and h_theta are 1D
+        if z.dim() != 1 or h_theta.dim() != 1:
+            raise ValueError(f"Expected 1D tensors, got z with shape {z.shape} and h_theta with shape {h_theta.shape}")
 
-        # Subset loss
-        subset_loss = sum([torch.norm(grad_d - grad_x) ** 2 for grad_d, grad_x in zip(grads_D, grads_X)])
-        subset_loss += self.memory_set_manager.lambda_val * torch.sum(W_X ** 2)
+        distill_loss = self.memory_set_manager.alpha * w * torch.norm(z - h_theta, dim=0) ** 2
+        ce_loss = self.memory_set_manager.beta * w * nn.CrossEntropyLoss()(logits, y.long())  # Cast y to LongTensor
 
-        return subset_loss
+        return distill_loss + ce_loss
+
     
     # def grad_l_sub(self, D_x, D_y, D_z, W_D, X, X_y, Z, W_X, model):
     #     # Move the data to the appropriate device
@@ -580,17 +575,15 @@ class ContinualLearningManager(ABC):
 
         # Compute the gradients for the full dataset
         model.zero_grad()
-        loss_D = sum([self.l_rep(model, x, y, z, w) for x, y, z, w in zip(D_x, D_y, D_z, W_D)])
-        if not isinstance(loss_D, torch.Tensor):
-            loss_D = torch.tensor(loss_D, dtype=torch.float32, device=DEVICE)
+        losses_D = [self.l_rep(model, x, y, z, w) for x, y, z, w in zip(D_x, D_y, D_z, W_D)]
+        loss_D = torch.sum(torch.stack(losses_D))
         loss_D.backward()
         grads_D = [param.grad.clone() for param in model.parameters()]
 
         # Compute the gradients for the subset
         model.zero_grad()
-        loss_X = sum([self.l_rep(model, x, y, z, w) for x, y, z, w in zip(X, X_y, Z, W_X)])
-        if not isinstance(loss_X, torch.Tensor):
-            loss_X = torch.tensor(loss_X, dtype=torch.float32, device=DEVICE)
+        losses_X = [self.l_rep(model, x, y, z, w) for x, y, z, w in zip(X, X_y, Z, W_X)]
+        loss_X = torch.sum(torch.stack(losses_X))
         loss_X.backward()
         grads_X = [param.grad.clone() for param in model.parameters()]
 
@@ -598,6 +591,7 @@ class ContinualLearningManager(ABC):
         grad_diff = [grad_d - grad_x for grad_d, grad_x in zip(grads_D, grads_X)]
 
         return grad_diff
+
 
 
 
