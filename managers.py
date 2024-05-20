@@ -620,6 +620,7 @@ class ContinualLearningManager(ABC):
 
         return distill_loss + ce_loss
 
+
     
     # def grad_l_sub(self, D_x, D_y, D_z, W_D, X, X_y, Z, W_X, model):
     #     # Move the data to the appropriate device
