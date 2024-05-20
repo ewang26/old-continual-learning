@@ -298,142 +298,106 @@ class ContinualLearningManager(ABC):
                 self.tasks[self.task_index].modify_memory(batch_x, batch_y, outputs=outputs)
 
                 
-        elif self.memory_set_manager.__class__.__name__ == 'GCRMemorySetManager':
+        if self.memory_set_manager.__class__.__name__ == 'GCRMemorySetManager':
             if not (p == 1):
-                # Get a 1-batch dataloader
                 terminal_train_dataloader = self._get_terminal_task_dataloader()
-
-                # Reset criterion just in case
                 criterion = nn.CrossEntropyLoss()
                 current_labels: List[int] = list(self._get_current_labels())
+                model = model.to(DEVICE)
 
-                # Check if memory_x is empty
-                if self.tasks[self.task_index].memory_x.size(0) == 0:
-                    # Initialize memory_x with an appropriate shape
-                    memory_set_manager = self.tasks[self.task_index].memory_set_manager
-                    if memory_set_manager.memory_x_shape is not None:
-                        feature_dim = memory_set_manager.memory_x_shape
-                    elif hasattr(model, 'input_dim'):
-                        feature_dim = model.input_dim
-                    else:
-                        raise ValueError("Feature dimension not found in model or task.")
-
-                    self.tasks[self.task_index].memory_x = torch.empty(0, *feature_dim).to(DEVICE)
-
-                # Ensure memory_x is not empty
-                if self.tasks[self.task_index].memory_x.size(0) > 0:
-                    D = torch.empty(0, self.tasks[self.task_index].memory_x.shape[1] + 2).to(DEVICE)
-                else:
-                    raise ValueError("memory_x is empty and cannot be processed.")
-
-                # Initialize variables for GCR algorithm
-                print(f"self.task_index: {self.task_index}")
-                print(f"self.tasks[self.task_index]: {self.tasks[self.task_index]}")
-                print(f"self.tasks[self.task_index].memory_x: {self.tasks[self.task_index].memory_x}")
-                print(f"Shape of memory_x: {self.tasks[self.task_index].memory_x.shape}")
-
-                D = torch.empty(0, self.tasks[self.task_index].memory_x.shape[1] + 2).to(DEVICE)
-                W_D = torch.empty(0).to(DEVICE)
-                X = torch.empty(0, self.tasks[self.task_index].memory_x.shape[1] + 2).to(DEVICE)
-                W_X = torch.empty(0).to(DEVICE)
-
-                # Iterate through samples one by one
+                # Iterate through the current task's data
                 for batch_x, batch_y in terminal_train_dataloader:
-                    # Compute gradient for the new sample
-                    for param in model.parameters():
-                        param.grad = None
-                    h_x, z = model(batch_x.to(DEVICE), return_preactivations=True)
+                    batch_x, batch_y = batch_x.to(DEVICE), batch_y.to(DEVICE)
                     grad_sample = self.get_forward_pass_gradients(batch_x, batch_y, model, criterion, current_labels)
+                    self.update_reservoir(batch_x, batch_y)
+                    self.update_memory_gcr(batch_x, batch_y, grad_sample, model)
 
-                    # Append the new sample and its gradient to D
-                    D = torch.cat((D, torch.cat((batch_x.to(DEVICE), batch_y.unsqueeze(1).to(DEVICE), h_x), dim=1).unsqueeze(0)))
+    def update_memory_gcr(self, batch_x, batch_y, grad_sample, model):
+        # Move the batch data and memory data to the appropriate device
+        batch_x, batch_y = batch_x.to(DEVICE), batch_y.to(DEVICE)
+        self.tasks[self.task_index].memory_x = self.tasks[self.task_index].memory_x.to(DEVICE)
+        self.tasks[self.task_index].memory_y = self.tasks[self.task_index].memory_y.to(DEVICE)
+        self.tasks[self.task_index].memory_z = self.tasks[self.task_index].memory_z.to(DEVICE)
+        self.tasks[self.task_index].memory_weights = self.tasks[self.task_index].memory_weights.to(DEVICE)
 
-                    # Initialize weights for the new sample
-                    W_D = torch.cat((W_D, torch.tensor([1.0]).to(DEVICE)))
+        # Get the preactivations for the new samples
+        _, preactivations = model(batch_x, return_preactivations=True)
 
-                    # Get the number of unique labels in the dataset
-                    Y = len(torch.unique(torch.cat((self.tasks[self.task_index].memory_y, batch_y)).to(DEVICE)))
+        # Concatenate the new sample, its label, and preactivations to the memory set
+        self.tasks[self.task_index].memory_x = torch.cat((self.tasks[self.task_index].memory_x, batch_x))
+        self.tasks[self.task_index].memory_y = torch.cat((self.tasks[self.task_index].memory_y, batch_y))
+        self.tasks[self.task_index].memory_z = torch.cat((self.tasks[self.task_index].memory_z, preactivations))
 
-                    # Partition dataset D and weights W_D based on labels
-                    D_y = [torch.empty(0, D.shape[1]).to(DEVICE) for _ in range(Y)]
-                    W_D_y = [torch.empty(0).to(DEVICE) for _ in range(Y)]
-                    for i in range(len(D)):
-                        x, y, z = D[i, :-1], D[i, -1].long(), D[i, -2].long()
-                        D_y[y.item()] = torch.cat((D_y[y.item()], D[i].unsqueeze(0)))
-                        W_D_y[y.item()] = torch.cat((W_D_y[y.item()], W_D[i].unsqueeze(0)))
+        # Get the number of unique labels in the updated memory set
+        Y = len(torch.unique(self.tasks[self.task_index].memory_y))
 
-                    # Perform GCR subset selection for each label
-                    for y in range(Y):
-                        k_y = self.budget // Y
-                        X_y = torch.empty(0, D.shape[1]).to(DEVICE)
-                        W_X_y = torch.empty(0).to(DEVICE)
+        # Partition the memory set and weights based on labels
+        memory_x_y = [torch.empty(0, self.tasks[self.task_index].memory_x.shape[1]).to(DEVICE) for _ in range(Y)]
+        memory_y_y = [torch.empty(0).to(DEVICE) for _ in range(Y)]
+        memory_z_y = [torch.empty(0, self.tasks[self.task_index].memory_z.shape[1]).to(DEVICE) for _ in range(Y)]
+        memory_weights_y = [torch.empty(0).to(DEVICE) for _ in range(Y)]
 
-                        # Calculate initial residuals
-                        r = self.grad_l_sub(D_y[y], W_D_y[y], X_y, W_X_y, model)
+        for i in range(len(self.tasks[self.task_index].memory_x)):
+            x, y, z = self.tasks[self.task_index].memory_x[i], self.tasks[self.task_index].memory_y[i].long(), self.tasks[self.task_index].memory_z[i]
+            memory_x_y[y.item()] = torch.cat((memory_x_y[y.item()], x.unsqueeze(0)))
+            memory_y_y[y.item()] = torch.cat((memory_y_y[y.item()], y.unsqueeze(0)))
+            memory_z_y[y.item()] = torch.cat((memory_z_y[y.item()], z.unsqueeze(0)))
+            memory_weights_y[y.item()] = torch.cat((memory_weights_y[y.item()], self.tasks[self.task_index].memory_weights[i].unsqueeze(0)))
 
-                        while len(X_y) <= k_y and self.l_sub(D_y[y], W_D_y[y], X_y, W_X_y, model) >= self.epsilon:
-                            # Find the data point with maximum residual
-                            e = torch.argmax(torch.abs(r))
+        # Perform GCR subset selection for each label
+        updated_memory_x = torch.empty(0, self.tasks[self.task_index].memory_x.shape[1]).to(DEVICE)
+        updated_memory_y = torch.empty(0).to(DEVICE)
+        updated_memory_z = torch.empty(0, self.tasks[self.task_index].memory_z.shape[1]).to(DEVICE)
+        updated_memory_weights = torch.empty(0).to(DEVICE)
 
-                            # Update per-class subset
-                            X_y = torch.cat((X_y, D_y[y][e].unsqueeze(0)))
+        for y in range(Y):
+            k_y = self.memory_set_manager.memory_set_size // Y
+            X_y = torch.empty(0, self.tasks[self.task_index].memory_x.shape[1]).to(DEVICE)
+            Z_y = torch.empty(0, self.tasks[self.task_index].memory_z.shape[1]).to(DEVICE)
+            W_X_y = torch.empty(0).to(DEVICE)
 
-                            # Update per-class weights
-                            W_X_y = self.minimize_l_sub(D_y[y], W_D_y[y], X_y, model)
+            # Calculate initial residuals
+            r = self.grad_l_sub(memory_x_y[y], memory_y_y[y], memory_z_y[y], memory_weights_y[y], X_y, memory_y_y[y][:len(X_y)], Z_y, W_X_y, model)
 
-                            # Update residuals
-                            r = self.grad_l_sub(D_y[y], W_D_y[y], X_y, W_X_y, model)
+            while len(X_y) <= k_y and self.l_sub(memory_x_y[y], memory_y_y[y], memory_z_y[y], memory_weights_y[y], X_y, memory_y_y[y][:len(X_y)], Z_y, W_X_y, model) >= self.memory_set_manager.epsilon:
+                # Find the data point with maximum residual
+                e = torch.argmax(torch.abs(r))
 
-                        # Update the overall subset and weights
-                        X = torch.cat((X, X_y))
-                        W_X = torch.cat((W_X, W_X_y))
+                # Update per-class subset
+                X_y = torch.cat((X_y, memory_x_y[y][e].unsqueeze(0)))
+                Z_y = torch.cat((Z_y, memory_z_y[y][e].unsqueeze(0)))
 
-                # Update the memory set with the selected subset and weights
-                self.tasks[self.task_index].memory_x = X[:, :-2]
-                self.tasks[self.task_index].memory_y = X[:, -1].long()
-                self.tasks[self.task_index].memory_set_weights = W_X
+                # Update per-class weights
+                W_X_y = self.minimize_l_sub(memory_x_y[y], memory_y_y[y], memory_z_y[y], memory_weights_y[y], X_y, memory_y_y[y][:len(X_y)], Z_y, model)
 
-    def l_rep(self, theta, d, w):
-        """
-        Compute the representation loss as described in the paper.
+                # Update residuals
+                r = self.grad_l_sub(memory_x_y[y], memory_y_y[y], memory_z_y[y], memory_weights_y[y], X_y, memory_y_y[y][:len(X_y)], Z_y, W_X_y, model)
 
-        Args:
-            theta: Current model parameters.
-            d: Data point consisting of (x, y, z).
-            w: Weight associated with the data point.
+            # Update the overall subset and weights
+            updated_memory_x = torch.cat((updated_memory_x, X_y))
+            updated_memory_y = torch.cat((updated_memory_y, memory_y_y[y][:len(X_y)]))
+            updated_memory_z = torch.cat((updated_memory_z, Z_y))
+            updated_memory_weights = torch.cat((updated_memory_weights, W_X_y))
 
-        Returns:
-            Representation loss.
-        """
-        x, y, z = d
-        x = x.to(DEVICE)
-        y = y.to(DEVICE)
-        z = z.to(DEVICE)
+        # Update the memory set with the selected subset and weights
+        self.tasks[self.task_index].memory_x = updated_memory_x
+        self.tasks[self.task_index].memory_y = updated_memory_y
+        self.tasks[self.task_index].memory_z = updated_memory_z
+        self.tasks[self.task_index].memory_weights = updated_memory_weights
 
-        # Forward pass to get the current logits
-        h_theta, _ = self.model(x, return_preactivations=True)
 
-        # Distillation loss
-        distill_loss = self.alpha * w * torch.norm(z - h_theta, dim=1) ** 2
+    def l_rep(self, model, x, y, z, w):
+        # Move the data to the appropriate device
+        x, y, z = x.to(DEVICE), y.to(DEVICE), z.to(DEVICE)
 
-        # Cross-entropy loss
-        ce_loss = self.beta * w * nn.CrossEntropyLoss()(h_theta, y)
+        logits, h_theta = model(x, return_preactivations=True)
+        distill_loss = self.memory_set_manager.alpha * w * torch.norm(z - h_theta, dim=1) ** 2
+        ce_loss = self.memory_set_manager.beta * w * nn.CrossEntropyLoss()(logits, y)
 
         return distill_loss + ce_loss
 
     def l_sub(self, D, W_D, X, W_X, model):
-        """
-        Compute the subset loss as described in the paper.
 
-        Args:
-            D: Full dataset.
-            W_D: Weights for the full dataset.
-            X: Subset of the dataset.
-            W_X: Weights for the subset.
-
-        Returns:
-            Subset loss.
-        """
         # Compute the gradients for the full dataset
         grads_D = []
         for d, w in zip(D, W_D):

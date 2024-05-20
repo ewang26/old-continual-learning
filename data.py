@@ -821,22 +821,17 @@ class GCRMemorySetManager(MemorySetManager):
         self.p = p
         self.generator = torch.Generator().manual_seed(random_seed)
         np.random.seed(random_seed)
-        # Initialize memory set weights
-        #self.memory_set_weights = None
-        self.memory_x_shape = None
-        self.memory_y_shape = None
-
-        # These are hyperparameters
         self.alpha = 0.1
         self.beta = 0.5
         self.gamma = 1.5
         self.lambda_val = 1  # need to figure out this hyperparameter
 
     def create_memory_set(
-        self, x: Tensor, y: Tensor
-    ) -> Tuple[Tensor, Tensor]:
+        self, x: Float[Tensor, "n f"], y: Float[Tensor, "n"]
+    ) -> Tuple[Float[Tensor, "m f"], Float[Tensor, "m"]]:
         """Initializes an empty memory replay buffer if training, called when task objects are created
-        Else, use ideal model to generate GCR memory set
+        Else, use GCR to generate memory set
+
         Args:
             x: x data.
             y: y data.
@@ -844,21 +839,6 @@ class GCRMemorySetManager(MemorySetManager):
             (x_mem, y_mem) tuple.
         """
         self.memory_set_size = int(x.shape[0] * self.p)
-
-        # Store the shape of the memory sets
-        self.memory_x_shape = x.shape[1:]
-        self.memory_y_shape = y.shape[1:]
-
         if self.p == 1:
-            self.memory_set_weights = torch.ones(x.shape[0])  # Initialize memory set weights to 1
             return x, y
-
-        self.memory_set_weights = torch.empty(0)  # Initialize memory set weights to empty tensor
-        print(f"Initializing empty memory set with shapes: {self.memory_x_shape}, {self.memory_y_shape}")
-        
-        x_mem = torch.empty(0, *self.memory_x_shape).to(x.device)
-        y_mem = torch.empty(0, *self.memory_y_shape).to(y.device)
-        
-        print(f"x_mem shape: {x_mem.shape}, y_mem shape: {y_mem.shape}")
-        
-        return x_mem, y_mem
+        return torch.empty(0), torch.empty(0)

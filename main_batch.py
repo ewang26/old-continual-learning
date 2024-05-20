@@ -271,5 +271,6 @@ if __name__ == "__main__":
 
     config = Config(config_dict)
 
-    print("MAIN FINISHED")
+    
     main(config)
+    print("MAIN FINISHED")
