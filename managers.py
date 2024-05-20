@@ -499,9 +499,10 @@ class ContinualLearningManager(ABC):
             raise ValueError(f"Expected 1D tensors, got z with shape {z.shape} and h_theta with shape {h_theta.shape}")
 
         distill_loss = self.memory_set_manager.alpha * w * torch.norm(z - h_theta, dim=0) ** 2
-        ce_loss = self.memory_set_manager.beta * w * nn.CrossEntropyLoss()(logits, y)
+        ce_loss = self.memory_set_manager.beta * w * nn.CrossEntropyLoss()(logits, y.long())  # Cast y to LongTensor
 
         return distill_loss + ce_loss
+
 
 
     # def l_sub(self, D, W_D, X, W_X, model):
