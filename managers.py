@@ -395,11 +395,18 @@ class ContinualLearningManager(ABC):
         x, y, z = x.to(DEVICE), y.to(DEVICE), z.to(DEVICE)
 
         logits, h_theta = model(x, return_preactivations=True)
-        print(f"Shape of z: {z.shape}, Shape of h_theta: {h_theta.shape}")  # Add this line to debug
+        print(f"Shape of z: {z.shape}, Shape of h_theta: {h_theta.shape}")
 
-    # Check if the shapes of z and h_theta are compatible
-        if z.shape != h_theta.shape:
+    # Ensure z and h_theta are either both 1D or both 2D
+        if z.dim() != h_theta.dim():
             raise ValueError(f"Shape mismatch: z has shape {z.shape} but h_theta has shape {h_theta.shape}")
+
+        if z.dim() == 1:
+            distill_loss = self.memory_set_manager.alpha * w * torch.norm(z - h_theta, dim=0) ** 2
+        elif z.dim() == 2:
+            distill_loss = self.memory_set_manager.alpha * w * torch.norm(z - h_theta, dim=1) ** 2
+        else:
+            raise ValueError(f"Unsupported tensor dimensionality: z and h_theta must be either 1D or 2D")
         distill_loss = self.memory_set_manager.alpha * w * torch.norm(z - h_theta, dim=1) ** 2
         ce_loss = self.memory_set_manager.beta * w * nn.CrossEntropyLoss()(logits, y)
 
