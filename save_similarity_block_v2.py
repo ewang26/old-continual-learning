@@ -3,6 +3,8 @@ import os
 
 import yaml
 import argparse
+from tqdm import tqdm
+
 
 # converting to square
 
@@ -43,7 +45,7 @@ def get_grad_dist(metric_func,
         data_tensor = np.zeros((num_p, num_runs, num_ideal_models, num_tasks, num_grad_files))
         task_idx_arr = np.arange(5)
 
-    for p_index, p in enumerate(p_vals):
+    for p_index, p in enumerate(tqdm(p_vals, desc="Processing p values")):
         for run in range(num_runs):
             for ideal_index in range(num_ideal_models):
                 for task_idx, task_val in enumerate(task_idx_arr):
@@ -92,7 +94,7 @@ def compute_gradient_similarity(metric_list,
             if not os.path.exists(metric_save_dir): os.mkdir(metric_save_dir)
 
             # loop through gradient types
-            for grad_type in grad_type_arr:
+            for grad_type in tqdm(grad_type_arr, desc="Processing gradient types"):
                 result_file_path = f'{metric_save_dir}/{grad_type}_gradient_comp.npy'
 
                 data_block = get_grad_dist(metric_func = metric, 
