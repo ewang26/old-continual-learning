@@ -361,7 +361,7 @@ class ContinualLearningManager(ABC):
             W_X_y = torch.empty(0).to(DEVICE)
 
             # Calculate initial residuals
-            r = self.l_sub(memory_x_y[y], memory_y_y[y], memory_z_y[y], memory_weights_y[y], X_y, memory_y_y[y][:len(X_y)], Z_y, W_X_y, model)
+            r = self.grad_l_sub(memory_x_y[y], memory_y_y[y], memory_z_y[y], memory_weights_y[y], X_y, memory_y_y[y][:len(X_y)], Z_y, W_X_y, model)
 
             while len(X_y) <= k_y and self.l_sub(memory_x_y[y], memory_y_y[y], memory_z_y[y], memory_weights_y[y], X_y, memory_y_y[y][:len(X_y)], Z_y, W_X_y, model) >= self.memory_set_manager.epsilon:
                 # Find the data point with maximum residual
@@ -375,7 +375,7 @@ class ContinualLearningManager(ABC):
                 W_X_y = self.minimize_l_sub(memory_x_y[y], memory_y_y[y], memory_z_y[y], memory_weights_y[y], X_y, memory_y_y[y][:len(X_y)], Z_y, model)
 
                 # Update residuals
-                r = self.l_sub(memory_x_y[y], memory_y_y[y], memory_z_y[y], memory_weights_y[y], X_y, memory_y_y[y][:len(X_y)], Z_y, W_X_y, model)
+                r = self.grad_l_sub(memory_x_y[y], memory_y_y[y], memory_z_y[y], memory_weights_y[y], X_y, memory_y_y[y][:len(X_y)], Z_y, W_X_y, model)
 
             # Update the overall subset and weights
             updated_memory_x = torch.cat((updated_memory_x, X_y))
@@ -458,6 +458,29 @@ class ContinualLearningManager(ABC):
         subset_loss += self.memory_set_manager.lambda_val * torch.sum(W_X ** 2)
 
         return subset_loss
+    
+    def grad_l_sub(self, D_x, D_y, D_z, W_D, X, X_y, Z, W_X, model):
+        # Move the data to the appropriate device
+        D_x, D_y, D_z, X, X_y, Z = D_x.to(DEVICE), D_y.to(DEVICE), D_z.to(DEVICE), X.to(DEVICE), X_y.to(DEVICE), Z.to(DEVICE)
+
+        # Compute the gradients for the full dataset
+        model.zero_grad()
+        loss_D = sum([self.l_rep(model, x, y, z, w) for x, y, z, w in zip(D_x, D_y, D_z, W_D)])
+        loss_D.backward()
+        grads_D = [param.grad.clone() for param in model.parameters()]
+
+        # Compute the gradients for the subset
+        model.zero_grad()
+        loss_X = sum([self.l_rep(model, x, y, z, w) for x, y, z, w in zip(X, X_y, Z, W_X)])
+        loss_X.backward()
+        grads_X = [param.grad.clone() for param in model.parameters()]
+
+        # Return the difference in gradients
+        grad_diff = [grad_d - grad_x for grad_d, grad_x in zip(grads_D, grads_X)]
+
+        return grad_diff
+
+
 
 
     def compute_gradients_at_ideal(
