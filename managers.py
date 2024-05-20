@@ -309,7 +309,7 @@ class ContinualLearningManager(ABC):
                 for batch_x, batch_y in terminal_train_dataloader:
                     batch_x, batch_y = batch_x.to(DEVICE), batch_y.to(DEVICE)
                     grad_sample = self.get_forward_pass_gradients(batch_x, batch_y, model, criterion, current_labels)
-                    self.update_reservoir(batch_x, batch_y)
+                    # self.update_reservoir(batch_x, batch_y)
                     self.update_memory_gcr(batch_x, batch_y, grad_sample, model)
 
     def update_memory_gcr(self, batch_x, batch_y, grad_sample, model):
