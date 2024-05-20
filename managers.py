@@ -395,6 +395,11 @@ class ContinualLearningManager(ABC):
         x, y, z = x.to(DEVICE), y.to(DEVICE), z.to(DEVICE)
 
         logits, h_theta = model(x, return_preactivations=True)
+        print(f"Shape of z: {z.shape}, Shape of h_theta: {h_theta.shape}")  # Add this line to debug
+
+    # Check if the shapes of z and h_theta are compatible
+        if z.shape != h_theta.shape:
+            raise ValueError(f"Shape mismatch: z has shape {z.shape} but h_theta has shape {h_theta.shape}")
         distill_loss = self.memory_set_manager.alpha * w * torch.norm(z - h_theta, dim=1) ** 2
         ce_loss = self.memory_set_manager.beta * w * nn.CrossEntropyLoss()(logits, y)
 
