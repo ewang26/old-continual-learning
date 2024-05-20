@@ -318,7 +318,9 @@ class ContinualLearningManager(ABC):
         self.tasks[self.task_index].memory_x = self.tasks[self.task_index].memory_x.to(DEVICE)
         self.tasks[self.task_index].memory_y = self.tasks[self.task_index].memory_y.to(DEVICE)
         self.tasks[self.task_index].memory_z = self.tasks[self.task_index].memory_z.to(DEVICE)
-        self.tasks[self.task_index].memory_set_weights = self.tasks[self.task_index].memory_set_weights.to(DEVICE)
+        # self.tasks[self.task_index].memory_set_weights = self.tasks[self.task_index].memory_set_weights.to(DEVICE)
+        self.tasks[self.task_index].memory_set_weights = torch.cat((self.tasks[self.task_index].memory_set_weights, torch.ones(batch_x.shape[0]).to(DEVICE)))
+
 
         # Get the preactivations for the new samples
         _, preactivations = model(batch_x, return_preactivations=True)
