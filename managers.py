@@ -677,6 +677,21 @@ class ContinualLearningManager(ABC):
         grad_diff = [grad_d - grad_x for grad_d, grad_x in zip(grads_D, grads_X)]
 
         return grad_diff
+    
+    def minimize_l_sub(self, D_x, D_y, D_z, W_D, X, X_y, Z, model):
+
+        W_X = torch.ones(len(X), device=DEVICE, requires_grad=True)
+
+        optimizer = torch.optim.SGD([W_X], lr=0.01)
+
+        for _ in range(100):  # Number of optimization steps
+            optimizer.zero_grad()
+            loss = self.l_sub(D_x, D_y, D_z, W_D, X, X_y, Z, W_X, model)
+            loss.backward()
+            optimizer.step()
+
+        return W_X.detach()
+
 
 
 
