@@ -509,6 +509,7 @@ class ContinualLearningManager(ABC):
             W_X_y = torch.ones(0).to(DEVICE)  # Initialize weights to ones
 
             # Calculate initial residuals
+            print(f"memory_x_y[{y}]: {memory_x_y[y]}, memory_y_y[{y}]: {memory_y_y[y]}, memory_z_y[{y}]: {memory_z_y[y]}, memory_weights_y[{y}]: {memory_weights_y[y]}, X_y: {X_y}, Z_y: {Z_y}, W_X_y: {W_X_y}")
             r = self.grad_l_sub(memory_x_y[y], memory_y_y[y], memory_z_y[y], memory_weights_y[y], X_y, memory_y_y[y][:len(X_y)], Z_y, W_X_y, model)
 
             while len(X_y) <= k_y and self.l_sub(memory_x_y[y], memory_y_y[y], memory_z_y[y], memory_weights_y[y], X_y, memory_y_y[y][:len(X_y)], Z_y, W_X_y, model) >= self.memory_set_manager.epsilon:
@@ -536,6 +537,7 @@ class ContinualLearningManager(ABC):
         self.tasks[self.task_index].memory_y = updated_memory_y
         self.tasks[self.task_index].memory_z = updated_memory_z
         self.tasks[self.task_index].memory_set_weights = updated_memory_weights
+
 
 
 
@@ -645,6 +647,10 @@ class ContinualLearningManager(ABC):
 
         # Compute the gradients for the subset
         model.zero_grad()
+        
+        # Debug prints
+        print(f"X: {X}, X_y: {X_y}, Z: {Z}, W_X: {W_X}")
+        
         losses_X = [self.l_rep(model, x, y, z, w) for x, y, z, w in zip(X, X_y, Z, W_X)]
         print(f"losses_X: {losses_X}")  # Debug: Print losses_X
         if not losses_X:
