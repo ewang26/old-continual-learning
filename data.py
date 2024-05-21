@@ -453,7 +453,8 @@ class GSSMemorySetManager(MemorySetManager):
         # memory_y = y[memory_set_indices]
 
         # return memory_x, memory_y
-        return torch.empty(0), torch.empty(0)
+        #return torch.empty(0), torch.empty(0)
+        return torch.empty(0, device=DEVICE), torch.empty(0, device=DEVICE)
     
     def update_GSS_greedy(self, memory_x, memory_y, C_arr, sample_x, sample_y, grad_sample, grad_batch):
         '''
