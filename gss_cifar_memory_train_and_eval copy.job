@@ -2,7 +2,7 @@
 #SBATCH -n 1
 #SBATCH -N 1
 #SBATCH -p gpu
-#SBATCH -t 0-03:00
+#SBATCH -t 0-10:00
 #SBATCH --mem=100
 #SBATCH --gres=gpu:1
 #SBATCH --job-name=continual_learning
