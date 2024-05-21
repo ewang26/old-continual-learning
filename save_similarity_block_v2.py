@@ -76,16 +76,19 @@ def compute_gradient_similarity(metric_list,
                                 num_runs):
     
     grad_sim_dir = 'gradient_similarity'
-    if not os.path.exists(grad_sim_dir): os.mkdir(grad_sim_dir)
+    # if not os.path.exists(grad_sim_dir): os.mkdir(grad_sim_dir)
+    os.makedirs(grad_sim_dir, exist_ok=True)
 
     dataset_save_dir = f'{grad_sim_dir}/{dataset_name}'
-    if not os.path.exists(dataset_save_dir): os.mkdir(dataset_save_dir)
+    # if not os.path.exists(dataset_save_dir): os.mkdir(dataset_save_dir)
+    os.makedirs(dataset_save_dir, exist_ok=True)
 
     # loop through memory methods
     for memory_method in memory_method_arr:
 
         mem_save_dir = f'{dataset_save_dir}/{memory_method}'
-        if not os.path.exists(mem_save_dir): os.mkdir(mem_save_dir)
+        #if not os.path.exists(mem_save_dir): os.mkdir(mem_save_dir)
+        os.makedirs(mem_save_dir, exist_ok=True) #changed this
 
         # loop through metric functions
         for metric_index, metric_name in enumerate(metric_names):
