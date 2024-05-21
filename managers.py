@@ -489,13 +489,18 @@ class ContinualLearningManager(ABC):
         Y = len(unique_labels)
 
         # Partition the memory set and weights based on labels
-        memory_x_y = [torch.empty((0, self.tasks[self.task_index].memory_x.shape[1]), device=DEVICE) for _ in range(Y)]
+        # 32x32 for CIFAR only
+        memory_x_y = [torch.empty((0, self.tasks[self.task_index].memory_x.shape[1], 32, 32), device=DEVICE) for _ in range(Y)]
         memory_y_y = [torch.empty((0,), dtype=torch.long, device=DEVICE) for _ in range(Y)]
         memory_z_y = [torch.empty((0, self.tasks[self.task_index].memory_z.shape[1]), device=DEVICE) for _ in range(Y)]
         memory_weights_y = [torch.ones((0,), device=DEVICE) for _ in range(Y)]  # Initialize weights to ones
 
         for i in range(len(self.tasks[self.task_index].memory_x)):
             x, y, z = self.tasks[self.task_index].memory_x[i], self.tasks[self.task_index].memory_y[i].long(), self.tasks[self.task_index].memory_z[i]
+            print(f"x is {x.size()}")
+            # print(f"memory_x.shape[1] has shape {self.tasks[self.task_index].memory_x.shape}")
+            print(f"memory_x_y[i] has shape {memory_x_y[0]}")
+
             label_index = (unique_labels == y).nonzero(as_tuple=True)[0].item()
             memory_x_y[label_index] = torch.cat((memory_x_y[label_index], x.unsqueeze(0)))
             memory_y_y[label_index] = torch.cat((memory_y_y[label_index], y.unsqueeze(0)))
