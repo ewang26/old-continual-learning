@@ -499,7 +499,7 @@ class ContinualLearningManager(ABC):
             x, y, z = self.tasks[self.task_index].memory_x[i], self.tasks[self.task_index].memory_y[i].long(), self.tasks[self.task_index].memory_z[i]
             print(f"x is {x.size()}")
             # print(f"memory_x.shape[1] has shape {self.tasks[self.task_index].memory_x.shape}")
-            print(f"memory_x_y[i] has shape {memory_x_y[0]}")
+            # print(f"memory_x_y[i] has shape {memory_x_y[0]}")
 
             label_index = (unique_labels == y).nonzero(as_tuple=True)[0].item()
             memory_x_y[label_index] = torch.cat((memory_x_y[label_index], x.unsqueeze(0)))
@@ -525,8 +525,11 @@ class ContinualLearningManager(ABC):
             W_X_y = torch.ones((0,), device=DEVICE)  # Initialize weights to ones
 
             # Calculate initial residuals
-            print(f"memory_x_y[{y}]: {memory_x_y[y]}, memory_y_y[{y}]: {memory_y_y[y]}, memory_z_y[{y}]: {memory_z_y[y]}, memory_weights_y[{y}]: {memory_weights_y[y]}, X_y: {X_y}, Z_y: {Z_y}, W_X_y: {W_X_y}")
+            print(f"initial memory_y_y[y] is {memory_y_y[y]}")
+
+            # print(f"memory_x_y[{y}]: {memory_x_y[y]}, memory_y_y[{y}]: {memory_y_y[y]}, memory_z_y[{y}]: {memory_z_y[y]}, memory_weights_y[{y}]: {memory_weights_y[y]}, X_y: {X_y}, Z_y: {Z_y}, W_X_y: {W_X_y}")
             r = self.grad_l_sub(memory_x_y[y], memory_y_y[y], memory_z_y[y], memory_weights_y[y], X_y, memory_y_y[y][:len(X_y)], Z_y, W_X_y, model)
+
 
             while len(X_y) <= k_y and self.l_sub(memory_x_y[y], memory_y_y[y], memory_z_y[y], memory_weights_y[y], X_y, memory_y_y[y][:len(X_y)], Z_y, W_X_y, model) >= self.memory_set_manager.epsilon:
                 # Find the data point with maximum residual
@@ -539,6 +542,7 @@ class ContinualLearningManager(ABC):
                 # Update per-class weights
                 W_X_y = self.minimize_l_sub(memory_x_y[y], memory_y_y[y], memory_z_y[y], memory_weights_y[y], X_y, memory_y_y[y][:len(X_y)], Z_y, model)
 
+                print(f"residuals y is {memory_y_y[y]}")
                 # Update residuals
                 r = self.grad_l_sub(memory_x_y[y], memory_y_y[y], memory_z_y[y], memory_weights_y[y], X_y, memory_y_y[y][:len(X_y)], Z_y, W_X_y, model)
 
@@ -612,12 +616,17 @@ class ContinualLearningManager(ABC):
         # Move the data to the appropriate device
         x, y, z = x.to(DEVICE), y.to(DEVICE), z.to(DEVICE)
 
+        x = x.view(-1, 3, 32, 32)
+        print(f"x shape before model is: {x.shape}")
         logits, h_theta = model(x, return_preactivations=True)
+        
+
+        # h_theta = h_theta.squeeze()
         print(f"Shape of z: {z.shape}, Shape of h_theta: {h_theta.shape}")
 
         # Ensure z and h_theta are 1D
-        if z.dim() != 1 or h_theta.dim() != 1:
-            raise ValueError(f"Expected 1D tensors, got z with shape {z.shape} and h_theta with shape {h_theta.shape}")
+        # if z.dim() != 1 or h_theta.dim() != 1:
+        #     raise ValueError(f"Expected 1D tensors, got z with shape {z.shape} and h_theta with shape {h_theta.shape}")
 
         distill_loss = self.memory_set_manager.alpha * w * torch.norm(z - h_theta, dim=0) ** 2
         ce_loss = self.memory_set_manager.beta * w * nn.CrossEntropyLoss()(logits, y.long())  # Cast y to LongTensor
@@ -652,6 +661,7 @@ class ContinualLearningManager(ABC):
         # Move the data to the appropriate device
         D_x, D_y, D_z, X, X_y, Z = D_x.to(DEVICE), D_y.to(DEVICE), D_z.to(DEVICE), X.to(DEVICE), X_y.to(DEVICE), Z.to(DEVICE)
 
+        print(f"D_y is {D_y}")
         # Compute the gradients for the full dataset
         model.zero_grad()
         losses_D = [self.l_rep(model, x, y, z, w) for x, y, z, w in zip(D_x, D_y, D_z, W_D)]
