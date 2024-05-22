@@ -16,7 +16,7 @@ num_ideal_models: 10
 # for gradient evaluating
 p_arr: [0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1]
 # num_samples: [1, 10, 10, 10, 10, 10, 10, 10, 10, 10]
-num_samples: [10, 10, 10, 10, 10, 10, 10, 10, 10, 10]
+num_samples: [2, 2, 10, 10, 10, 10, 10, 10, 10, 10]
 
 
 #debugging 
@@ -38,22 +38,22 @@ epochs: 50
 #epochs: 30
 
 # Model arch 
-model:
- type: mlp 
- params: 
-   sizes: [784, 100, 10] 
-   acts: [relu]
+# model:
+#  type: mlp 
+#  params: 
+#    sizes: [784, 100, 10] 
+#    acts: [relu]
 
 #Example CNN
-# model: 
-#   type: cnn
-#   params: 
-#     in_channels: 3 
-#     out_channels: 10
-#     l1_out_channels: 32
-#     l2_out_channels: 32
-#     l3_out_channels: 64
-#     l4_out_channels: 64
+model: 
+  type: cnn
+  params: 
+    in_channels: 3 
+    out_channels: 10
+    l1_out_channels: 32
+    l2_out_channels: 32
+    l3_out_channels: 64
+    l4_out_channels: 64
 
 
 #model_save_dir: models/mnist_split #/1/
