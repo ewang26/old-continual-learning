@@ -142,7 +142,10 @@ def main(config: Config):
                         post_train_model_load_path = (
                             #f'{model_load_dir}/{config.memory_selection_method}/1/train/task_{task_num}/{grad_loc}_grad/model.pt'
                             #f'{model_load_dir}/ideal_model/task_{task_num}/{grad_loc}_grad/model.pt'
-                            f'{model_load_dir}/ideal_model/train_{ideal_model_index}/task_{task_num}/model.pt'
+                            if grad_type == 'new':
+                                f'{model_load_dir}/ideal_model/train_{ideal_model_index}/task_{task_num-1}/model.pt'
+                            else: 
+                                f'{model_load_dir}/ideal_model/train_{ideal_model_index}/task_{task_num}/model.pt'
                             #f'{model_load_dir}/ideal_model/{config.memory_selection_method}/1/train/task_{task_num}/{grad_loc}_grad/model.pt'
                         )
                         post_train_model = torch.load(post_train_model_load_path, map_location=DEVICE)
@@ -151,7 +154,7 @@ def main(config: Config):
 
                         for grad_type in config.grad_type:
                             
-                            if not ((grad_type == 'past') and (task_num == 0)): # no past gradients for first task
+                            if (task_num == 0): # no past gradients for first task
                                 # save gradients w.r.t ideal weights
                                 if config.use_random_img:
                                     mem_sel_path = f"{model_load_dir}/{config.memory_selection_method}_random_img"
