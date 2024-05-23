@@ -875,6 +875,7 @@ class iCaRL(MemorySetManager):
         self.random_seed = random_seed
         self.generator = torch.Generator().manual_seed(random_seed)
         self.memory_set_size = 0
+        self.first_task = True
 
     def create_memory_set(self, x, y):
         """ Create or update memory set for new tasks """
@@ -883,17 +884,21 @@ class iCaRL(MemorySetManager):
         transform_test = transforms.Compose([
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
-        memory_set_size = int(self.p * len(x))
-        print(f"memory set size is {memory_set_size}")
+        if self.first_task:
+            self.memory_set_size = int(self.p * len(x))
+            print(f"memory set size is {self.memory_set_size}")
+
         self.net.update_representation(x, y)  # update the model with new data
 
         print("updated memory sets")
 
-        self.net.construct_exemplar_set(x, y, memory_set_size, transform_test)  # update the exemplar set for the new class
+        self.net.construct_exemplar_set(x, y, self.memory_set_size, transform_test)  # update the exemplar set for the new class
         # print(f"shape of memory set after construction is: {np.array(self.net.exemplar_sets).shape}")
         print(f"shape of memory set after construction is: {torch.tensor(self.net.exemplar_sets[-1]).shape}")
         print("constructed the new memory set")
         
+        self.first_task = False
+
         return torch.tensor(self.net.exemplar_sets[-1]), torch.tensor(self.net.exemplar_labels[-1])
         # return self.net.exemplar_sets[-1], self.net.exemplar_labels[-1] # should return the last image set in the memory set
         # does I need to return a tensor?
