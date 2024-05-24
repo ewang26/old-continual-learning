@@ -136,25 +136,27 @@ def main(config: Config):
                 if model_load_dir is not None:
                     
                     for ideal_model_index in range(config.num_ideal_models):
-                    
-                        #for grad_loc in ['start', 'end']: # eval grad at both start and end of task
-                        # Load model and run evaluation
-                        post_train_model_load_path = (
-                            #f'{model_load_dir}/{config.memory_selection_method}/1/train/task_{task_num}/{grad_loc}_grad/model.pt'
-                            #f'{model_load_dir}/ideal_model/task_{task_num}/{grad_loc}_grad/model.pt'
+                        for grad_type in config.grad_type:
+                            #for grad_loc in ['start', 'end']: # eval grad at both start and end of task
+                            # Load model and run evaluation
+
                             if grad_type == 'new':
-                                f'{model_load_dir}/ideal_model/train_{ideal_model_index}/task_{task_num-1}/model.pt'
+                                post_train_model_load_path = (
+                                #f'{model_load_dir}/{config.memory_selection_method}/1/train/task_{task_num}/{grad_loc}_grad/model.pt'
+                                #f'{model_load_dir}/ideal_model/task_{task_num}/{grad_loc}_grad/model.pt'
+                                
+                                f'{model_load_dir}/ideal_model/train_{ideal_model_index}/task_{task_num-1}/model.pt')
                             else: 
-                                f'{model_load_dir}/ideal_model/train_{ideal_model_index}/task_{task_num}/model.pt'
-                            #f'{model_load_dir}/ideal_model/{config.memory_selection_method}/1/train/task_{task_num}/{grad_loc}_grad/model.pt'
-                        )
-                        post_train_model = torch.load(post_train_model_load_path, map_location=DEVICE)
-                        # post_train_model = torch.load(post_train_model_load_path, map_location="mps") # only for MPS. change to cuda for cluster!
-                        # Can get pre training model 
+                                post_train_model_load_path = (
+                                f'{model_load_dir}/ideal_model/train_{ideal_model_index}/task_{task_num}/model.pt')
+
+                            post_train_model = torch.load(post_train_model_load_path, map_location=DEVICE)
+                            # post_train_model = torch.load(post_train_model_load_path, map_location="mps") # only for MPS. change to cuda for cluster!
+                            # Can get pre training model 
 
                         for grad_type in config.grad_type:
                             
-                            if (task_num == 0): # no past gradients for first task
+                            if not (task_num == 0): # no past gradients for first task # should this also include grad_type == 'past'?
                                 # save gradients w.r.t ideal weights
                                 if config.use_random_img:
                                     mem_sel_path = f"{model_load_dir}/{config.memory_selection_method}_random_img"
