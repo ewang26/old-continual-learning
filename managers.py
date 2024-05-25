@@ -312,157 +312,6 @@ class ContinualLearningManager(ABC):
                     # self.update_reservoir(batch_x, batch_y)
                     self.update_memory_gcr(batch_x, batch_y, grad_sample, model)
 
-    # def update_memory_gcr(self, batch_x, batch_y, grad_sample, model):
-    #     # Move the batch data and memory data to the appropriate device
-    #     batch_x, batch_y = batch_x.to(DEVICE), batch_y.to(DEVICE)
-    #     self.tasks[self.task_index].memory_x = self.tasks[self.task_index].memory_x.to(DEVICE)
-    #     self.tasks[self.task_index].memory_y = self.tasks[self.task_index].memory_y.to(DEVICE)
-    #     self.tasks[self.task_index].memory_z = self.tasks[self.task_index].memory_z.to(DEVICE)
-    #     # self.tasks[self.task_index].memory_set_weights = self.tasks[self.task_index].memory_set_weights.to(DEVICE)
-    #     self.tasks[self.task_index].memory_set_weights = torch.cat((self.tasks[self.task_index].memory_set_weights, torch.ones(batch_x.shape[0]).to(DEVICE)))
-
-
-    #     # Get the preactivations for the new samples
-    #     _, preactivations = model(batch_x, return_preactivations=True)
-
-    #     # Concatenate the new sample, its label, and preactivations to the memory set
-    #     self.tasks[self.task_index].memory_x = torch.cat((self.tasks[self.task_index].memory_x, batch_x))
-    #     self.tasks[self.task_index].memory_y = torch.cat((self.tasks[self.task_index].memory_y, batch_y))
-    #     self.tasks[self.task_index].memory_z = torch.cat((self.tasks[self.task_index].memory_z, preactivations))
-
-    #     # Get the number of unique labels in the updated memory set
-    #     Y = len(torch.unique(self.tasks[self.task_index].memory_y))
-
-    #     # Partition the memory set and weights based on labels
-    #     # Initialize partitioned memory sets
-    #     memory_x_y = [torch.empty(0, self.tasks[self.task_index].memory_x.shape[1]).to(DEVICE) for _ in range(Y)]
-    #     memory_y_y = [torch.empty(0).to(DEVICE) for _ in range(Y)]
-    #     memory_z_y = [torch.empty(0, self.tasks[self.task_index].memory_z.shape[1]).to(DEVICE) for _ in range(Y)]
-    #     memory_weights_y = [torch.ones(0).to(DEVICE) for _ in range(Y)]  # Initialize weights to ones instead of empty
-
-
-    #     for i in range(len(self.tasks[self.task_index].memory_x)):
-    #         x, y, z = self.tasks[self.task_index].memory_x[i], self.tasks[self.task_index].memory_y[i].long(), self.tasks[self.task_index].memory_z[i]
-    #         memory_x_y[y.item()] = torch.cat((memory_x_y[y.item()], x.unsqueeze(0)))
-    #         memory_y_y[y.item()] = torch.cat((memory_y_y[y.item()], y.unsqueeze(0)))
-    #         memory_z_y[y.item()] = torch.cat((memory_z_y[y.item()], z.unsqueeze(0)))
-    #         memory_weights_y[y.item()] = torch.cat((memory_weights_y[y.item()], self.tasks[self.task_index].memory_set_weights[i].unsqueeze(0)))
-
-    #     # Perform GCR subset selection for each label
-    #     updated_memory_x = torch.empty(0, self.tasks[self.task_index].memory_x.shape[1]).to(DEVICE)
-    #     updated_memory_y = torch.empty(0).to(DEVICE)
-    #     updated_memory_z = torch.empty(0, self.tasks[self.task_index].memory_z.shape[1]).to(DEVICE)
-    #     updated_memory_weights = torch.empty(0).to(DEVICE)
-
-    #     for y in range(Y):
-    #         k_y = self.memory_set_manager.memory_set_size // Y
-    #         X_y = torch.empty(0, self.tasks[self.task_index].memory_x.shape[1]).to(DEVICE)
-    #         Z_y = torch.empty(0, self.tasks[self.task_index].memory_z.shape[1]).to(DEVICE)
-    #         W_X_y = torch.empty(0).to(DEVICE)
-
-    #         # Calculate initial residuals
-    #         r = self.grad_l_sub(memory_x_y[y], memory_y_y[y], memory_z_y[y], memory_weights_y[y], X_y, memory_y_y[y][:len(X_y)], Z_y, W_X_y, model)
-
-    #         while len(X_y) <= k_y and self.l_sub(memory_x_y[y], memory_y_y[y], memory_z_y[y], memory_weights_y[y], X_y, memory_y_y[y][:len(X_y)], Z_y, W_X_y, model) >= self.memory_set_manager.epsilon:
-    #             # Find the data point with maximum residual
-    #             e = torch.argmax(torch.abs(r))
-
-    #             # Update per-class subset
-    #             X_y = torch.cat((X_y, memory_x_y[y][e].unsqueeze(0)))
-    #             Z_y = torch.cat((Z_y, memory_z_y[y][e].unsqueeze(0)))
-
-    #             # Update per-class weights
-    #             W_X_y = self.minimize_l_sub(memory_x_y[y], memory_y_y[y], memory_z_y[y], memory_weights_y[y], X_y, memory_y_y[y][:len(X_y)], Z_y, model)
-
-    #             # Update residuals
-    #             r = self.grad_l_sub(memory_x_y[y], memory_y_y[y], memory_z_y[y], memory_weights_y[y], X_y, memory_y_y[y][:len(X_y)], Z_y, W_X_y, model)
-
-    #         # Update the overall subset and weights
-    #         updated_memory_x = torch.cat((updated_memory_x, X_y))
-    #         updated_memory_y = torch.cat((updated_memory_y, memory_y_y[y][:len(X_y)]))
-    #         updated_memory_z = torch.cat((updated_memory_z, Z_y))
-    #         updated_memory_weights = torch.cat((updated_memory_weights, W_X_y))
-
-    #     # Update the memory set with the selected subset and weights
-    #     self.tasks[self.task_index].memory_x = updated_memory_x
-    #     self.tasks[self.task_index].memory_y = updated_memory_y
-    #     self.tasks[self.task_index].memory_z = updated_memory_z
-    #     self.tasks[self.task_index].memory_weights = updated_memory_weights
-
-    # def update_memory_gcr(self, batch_x, batch_y, grad_sample, model):
-    #     # Move the batch data and memory data to the appropriate device
-    #     batch_x, batch_y = batch_x.to(DEVICE), batch_y.to(DEVICE)
-    #     self.tasks[self.task_index].memory_x = self.tasks[self.task_index].memory_x.to(DEVICE)
-    #     self.tasks[self.task_index].memory_y = self.tasks[self.task_index].memory_y.to(DEVICE)
-    #     self.tasks[self.task_index].memory_z = self.tasks[self.task_index].memory_z.to(DEVICE)
-    #     self.tasks[self.task_index].memory_set_weights = self.tasks[self.task_index].memory_set_weights.to(DEVICE)
-
-    #     # Get the preactivations for the new samples
-    #     _, preactivations = model(batch_x, return_preactivations=True)
-
-    #     # Concatenate the new sample, its label, and preactivations to the memory set
-    #     self.tasks[self.task_index].memory_x = torch.cat((self.tasks[self.task_index].memory_x, batch_x))
-    #     self.tasks[self.task_index].memory_y = torch.cat((self.tasks[self.task_index].memory_y, batch_y))
-    #     self.tasks[self.task_index].memory_z = torch.cat((self.tasks[self.task_index].memory_z, preactivations))
-    #     self.tasks[self.task_index].memory_set_weights = torch.cat((self.tasks[self.task_index].memory_set_weights, torch.ones(batch_x.shape[0]).to(DEVICE)))
-
-    #     # Get the number of unique labels in the updated memory set
-    #     Y = len(torch.unique(self.tasks[self.task_index].memory_y))
-
-    #     # Partition the memory set and weights based on labels
-    #     memory_x_y = [torch.empty(0, self.tasks[self.task_index].memory_x.shape[1]).to(DEVICE) for _ in range(Y)]
-    #     memory_y_y = [torch.empty(0).to(DEVICE) for _ in range(Y)]
-    #     memory_z_y = [torch.empty(0, self.tasks[self.task_index].memory_z.shape[1]).to(DEVICE) for _ in range(Y)]
-    #     memory_weights_y = [torch.ones(0).to(DEVICE) for _ in range(Y)]  # Initialize weights to ones
-
-    #     for i in range(len(self.tasks[self.task_index].memory_x)):
-    #         x, y, z = self.tasks[self.task_index].memory_x[i], self.tasks[self.task_index].memory_y[i].long(), self.tasks[self.task_index].memory_z[i]
-    #         memory_x_y[y.item()] = torch.cat((memory_x_y[y.item()], x.unsqueeze(0)))
-    #         memory_y_y[y.item()] = torch.cat((memory_y_y[y.item()], y.unsqueeze(0)))
-    #         memory_z_y[y.item()] = torch.cat((memory_z_y[y.item()], z.unsqueeze(0)))
-    #         memory_weights_y[y.item()] = torch.cat((memory_weights_y[y.item()], self.tasks[self.task_index].memory_set_weights[i].unsqueeze(0)))
-
-    #     # Perform GCR subset selection for each label
-    #     updated_memory_x = torch.empty(0, self.tasks[self.task_index].memory_x.shape[1]).to(DEVICE)
-    #     updated_memory_y = torch.empty(0).to(DEVICE)
-    #     updated_memory_z = torch.empty(0, self.tasks[self.task_index].memory_z.shape[1]).to(DEVICE)
-    #     updated_memory_weights = torch.empty(0).to(DEVICE)
-
-    #     for y in range(Y):
-    #         k_y = self.memory_set_manager.memory_set_size // Y
-    #         X_y = torch.empty(0, self.tasks[self.task_index].memory_x.shape[1]).to(DEVICE)
-    #         Z_y = torch.empty(0, self.tasks[self.task_index].memory_z.shape[1]).to(DEVICE)
-    #         W_X_y = torch.ones(0).to(DEVICE)  # Initialize weights to ones
-
-    #         # Calculate initial residuals
-    #         r = self.grad_l_sub(memory_x_y[y], memory_y_y[y], memory_z_y[y], memory_weights_y[y], X_y, memory_y_y[y][:len(X_y)], Z_y, W_X_y, model)
-
-    #         while len(X_y) <= k_y and self.l_sub(memory_x_y[y], memory_y_y[y], memory_z_y[y], memory_weights_y[y], X_y, memory_y_y[y][:len(X_y)], Z_y, W_X_y, model) >= self.memory_set_manager.epsilon:
-    #             # Find the data point with maximum residual
-    #             e = torch.argmax(torch.abs(r))
-
-    #             # Update per-class subset
-    #             X_y = torch.cat((X_y, memory_x_y[y][e].unsqueeze(0)))
-    #             Z_y = torch.cat((Z_y, memory_z_y[y][e].unsqueeze(0)))
-
-    #             # Update per-class weights
-    #             W_X_y = self.minimize_l_sub(memory_x_y[y], memory_y_y[y], memory_z_y[y], memory_weights_y[y], X_y, memory_y_y[y][:len(X_y)], Z_y, model)
-
-    #             # Update residuals
-    #             r = self.grad_l_sub(memory_x_y[y], memory_y_y[y], memory_z_y[y], memory_weights_y[y], X_y, memory_y_y[y][:len(X_y)], Z_y, W_X_y, model)
-
-    #         # Update the overall subset and weights
-    #         updated_memory_x = torch.cat((updated_memory_x, X_y))
-    #         updated_memory_y = torch.cat((updated_memory_y, memory_y_y[y][:len(X_y)]))
-    #         updated_memory_z = torch.cat((updated_memory_z, Z_y))
-    #         updated_memory_weights = torch.cat((updated_memory_weights, W_X_y))
-
-    #     # Update the memory set with the selected subset and weights
-    #     self.tasks[self.task_index].memory_x = updated_memory_x
-    #     self.tasks[self.task_index].memory_y = updated_memory_y
-    #     self.tasks[self.task_index].memory_z = updated_memory_z
-    #     self.tasks[self.task_index].memory_set_weights = updated_memory_weights
-
     def update_memory_gcr(self, batch_x, batch_y, grad_sample, model):
         # Move the batch data and memory data to the appropriate device
         batch_x, batch_y = batch_x.to(DEVICE), batch_y.to(DEVICE)
@@ -507,13 +356,13 @@ class ContinualLearningManager(ABC):
             memory_z_y[label_index] = torch.cat((memory_z_y[label_index], z.unsqueeze(0)))
             memory_weights_y[label_index] = torch.cat((memory_weights_y[label_index], self.tasks[self.task_index].memory_set_weights[i].unsqueeze(0)))
 
-        # Perform GCR subset selection for each label
+        # Perform GCR subset selection for each label #EW what is this doing?
         updated_memory_x = torch.empty((0, self.tasks[self.task_index].memory_x.shape[1]), device=DEVICE)
         updated_memory_y = torch.empty((0,), dtype=torch.long, device=DEVICE)
         updated_memory_z = torch.empty((0, self.tasks[self.task_index].memory_z.shape[1]), device=DEVICE)
         updated_memory_weights = torch.empty((0,), device=DEVICE)
 
-        for y in range(Y):
+        for y in range(Y): #EW this corresponds to line 5 in algorithm 2
             k_y = self.memory_set_manager.memory_set_size // Y
 
             # If there are no samples for this label, skip
@@ -558,67 +407,19 @@ class ContinualLearningManager(ABC):
         self.tasks[self.task_index].memory_z = updated_memory_z
         self.tasks[self.task_index].memory_set_weights = updated_memory_weights
 
-
-
-
-
-
-    # def l_rep(self, model, x, y, z, w):
-    #     # Move the data to the appropriate device
-    #     x, y, z = x.to(DEVICE), y.to(DEVICE), z.to(DEVICE)
-
-    #     logits, h_theta = model(x, return_preactivations=True)
-    #     print(f"Shape of z: {z.shape}, Shape of h_theta: {h_theta.shape}")
-
-    # # Ensure z and h_theta are either both 1D or both 2D
-    #     if z.dim() != h_theta.dim():
-    #         raise ValueError(f"Shape mismatch: z has shape {z.shape} but h_theta has shape {h_theta.shape}")
-
-    #     if z.dim() == 1:
-    #         distill_loss = self.memory_set_manager.alpha * w * torch.norm(z - h_theta, dim=0) ** 2
-    #     elif z.dim() == 2:
-    #         distill_loss = self.memory_set_manager.alpha * w * torch.norm(z - h_theta, dim=1) ** 2
-    #     else:
-    #         raise ValueError(f"Unsupported tensor dimensionality: z and h_theta must be either 1D or 2D")
-    #     distill_loss = self.memory_set_manager.alpha * w * torch.norm(z - h_theta, dim=1) ** 2
-    #     ce_loss = self.memory_set_manager.beta * w * nn.CrossEntropyLoss()(logits, y)
-
-    #     return distill_loss + ce_loss
-
-
-
-    # def l_sub(self, D, W_D, X, W_X, model):
-
-    #     # Compute the gradients for the full dataset
-    #     grads_D = []
-    #     for d, w in zip(D, W_D):
-    #         grad_D = torch.autograd.grad(self.l_rep(model.parameters(), d, w), model.parameters(), create_graph=True)
-    #         grads_D.append(grad_D)
-
-    #     # Compute the gradients for the subset
-    #     grads_X = []
-    #     for x, w in zip(X, W_X):
-    #         grad_X = torch.autograd.grad(self.l_rep(model.parameters(), x, w), model.parameters(), create_graph=True)
-    #         grads_X.append(grad_X)
-
-    #     # Sum of gradients for the full dataset
-    #     grad_sum_D = sum([torch.norm(grad, dim=0) ** 2 for grad in grads_D])
-
-    #     # Sum of gradients for the subset
-    #     grad_sum_X = sum([torch.norm(grad, dim=0) ** 2 for grad in grads_X])
-
-    #     # Subset loss
-    #     subset_loss = torch.norm(grad_sum_D - grad_sum_X) ** 2 + self.lambda_val * torch.sum(W_X ** 2)
-
-    #     return subset_loss
-
     def l_rep(self, model, x, y, z, w):
         # Move the data to the appropriate device
+        y = torch.from_numpy(np.array([y.cpu()]))
         x, y, z = x.to(DEVICE), y.to(DEVICE), z.to(DEVICE)
 
         x = x.view(-1, 3, 32, 32)
         print(f"x shape before model is: {x.shape}")
         logits, h_theta = model(x, return_preactivations=True)
+        
+        y_one_hot_vector = np.zeros(10)
+    
+        y_one_hot_vector[y] = 1
+
         
 
         # h_theta = h_theta.squeeze()
@@ -628,34 +429,12 @@ class ContinualLearningManager(ABC):
         # if z.dim() != 1 or h_theta.dim() != 1:
         #     raise ValueError(f"Expected 1D tensors, got z with shape {z.shape} and h_theta with shape {h_theta.shape}")
 
+        print(f"y is {y}")
         distill_loss = self.memory_set_manager.alpha * w * torch.norm(z - h_theta, dim=0) ** 2
-        ce_loss = self.memory_set_manager.beta * w * nn.CrossEntropyLoss()(logits, y.long())  # Cast y to LongTensor
+        ce_loss = self.memory_set_manager.beta * w * nn.CrossEntropyLoss()(logits, y)  # Cast y to LongTensor
 
         return distill_loss + ce_loss
 
-
-
-    
-    # def grad_l_sub(self, D_x, D_y, D_z, W_D, X, X_y, Z, W_X, model):
-    #     # Move the data to the appropriate device
-    #     D_x, D_y, D_z, X, X_y, Z = D_x.to(DEVICE), D_y.to(DEVICE), D_z.to(DEVICE), X.to(DEVICE), X_y.to(DEVICE), Z.to(DEVICE)
-
-    #     # Compute the gradients for the full dataset
-    #     model.zero_grad()
-    #     loss_D = sum([self.l_rep(model, x, y, z, w) for x, y, z, w in zip(D_x, D_y, D_z, W_D)])
-    #     loss_D.backward()
-    #     grads_D = [param.grad.clone() for param in model.parameters()]
-
-    #     # Compute the gradients for the subset
-    #     model.zero_grad()
-    #     loss_X = sum([self.l_rep(model, x, y, z, w) for x, y, z, w in zip(X, X_y, Z, W_X)])
-    #     loss_X.backward()
-    #     grads_X = [param.grad.clone() for param in model.parameters()]
-
-    #     # Return the difference in gradients
-    #     grad_diff = [grad_d - grad_x for grad_d, grad_x in zip(grads_D, grads_X)]
-
-    #     return grad_diff
 
     def grad_l_sub(self, D_x, D_y, D_z, W_D, X, X_y, Z, W_X, model):
         # Move the data to the appropriate device
@@ -681,10 +460,14 @@ class ContinualLearningManager(ABC):
         
         losses_X = [self.l_rep(model, x, y, z, w) for x, y, z, w in zip(X, X_y, Z, W_X)]
         print(f"losses_X: {losses_X}")  # Debug: Print losses_X
-        if not losses_X:
-            raise ValueError("losses_X is empty")
+        # if not losses_X:
+        #     raise ValueError("losses_X is empty")
 
-        loss_X = torch.sum(torch.stack(losses_X))
+
+        if len(losses_X) != 0:
+            loss_X = torch.sum(torch.stack(losses_X))
+        else: 
+            loss_X = np.sum(losses_X) # how to compute gradient on empty list?
         loss_X.backward()
         grads_X = [param.grad.clone() for param in model.parameters()]
 
