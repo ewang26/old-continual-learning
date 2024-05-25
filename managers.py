@@ -300,114 +300,140 @@ class ContinualLearningManager(ABC):
                 
         if self.memory_set_manager.__class__.__name__ == 'GCRMemorySetManager':
             if not (p == 1):
-                terminal_train_dataloader = self._get_terminal_task_dataloader()
+                terminal_train_dataloader = self._get_terminal_task_dataloader(full_batch=True)
                 criterion = nn.CrossEntropyLoss()
                 current_labels: List[int] = list(self._get_current_labels())
                 model = model.to(DEVICE)
 
-                # Iterate through the current task's data
+                # This is actually iterating once since batch_x/y is the full terminal task dataset
                 for batch_x, batch_y in terminal_train_dataloader:
-                    batch_x, batch_y = batch_x.to(DEVICE), batch_y.to(DEVICE)
+                    # batch_x, batch_y = batch_x.to(DEVICE), batch_y.to(DEVICE)
                     grad_sample = self.get_forward_pass_gradients(batch_x, batch_y, model, criterion, current_labels)
                     # self.update_reservoir(batch_x, batch_y)
                     self.update_memory_gcr(batch_x, batch_y, grad_sample, model)
 
     def update_memory_gcr(self, batch_x, batch_y, grad_sample, model):
         # Move the batch data and memory data to the appropriate device
-        batch_x, batch_y = batch_x.to(DEVICE), batch_y.to(DEVICE)
-        self.tasks[self.task_index].memory_x = self.tasks[self.task_index].memory_x.to(DEVICE)
-        self.tasks[self.task_index].memory_y = self.tasks[self.task_index].memory_y.to(DEVICE)
-        self.tasks[self.task_index].memory_z = self.tasks[self.task_index].memory_z.to(DEVICE)
-        self.tasks[self.task_index].memory_set_weights = self.tasks[self.task_index].memory_set_weights.to(DEVICE)
+        # batch_x, batch_y = batch_x.to(DEVICE), batch_y.to(DEVICE)
+        # self.tasks[self.task_index].memory_x = self.tasks[self.task_index].memory_x.to(DEVICE)
+        # self.tasks[self.task_index].memory_y = self.tasks[self.task_index].memory_y.to(DEVICE)
+        # self.tasks[self.task_index].memory_z = self.tasks[self.task_index].memory_z.to(DEVICE)
+        # self.tasks[self.task_index].memory_set_weights = self.tasks[self.task_index].memory_set_weights.to(DEVICE)
 
         # Get the preactivations for the new samples
-        _, preactivations = model(batch_x, return_preactivations=True)
+        _, preactivations = model(batch_x.to(DEVICE), return_preactivations=True)
 
         # Initialize memory_z if it is None
-        if self.tasks[self.task_index].memory_z is None:
-            self.tasks[self.task_index].memory_z = torch.empty((0, preactivations.shape[1]), device=DEVICE)
+        # if self.tasks[self.task_index].memory_z is None:
+        #     self.tasks[self.task_index].memory_z = torch.empty((0, preactivations.shape[1]))
 
+        print(f"memory_x starts as {self.tasks[self.task_index].memory_x.size()}")
         # Concatenate the new sample, its label, and preactivations to the memory set
-        self.tasks[self.task_index].memory_x = torch.cat((self.tasks[self.task_index].memory_x, batch_x))
-        self.tasks[self.task_index].memory_y = torch.cat((self.tasks[self.task_index].memory_y, batch_y))
-        self.tasks[self.task_index].memory_z = torch.cat((self.tasks[self.task_index].memory_z, preactivations))
-        self.tasks[self.task_index].memory_set_weights = torch.cat((self.tasks[self.task_index].memory_set_weights, torch.ones(batch_x.shape[0]).to(DEVICE)))
+        # self.tasks[self.task_index].memory_x = torch.cat((self.tasks[self.task_index].memory_x, batch_x))
+        # self.tasks[self.task_index].memory_y = torch.cat((self.tasks[self.task_index].memory_y, batch_y))
+        # self.tasks[self.task_index].memory_z = torch.cat((self.tasks[self.task_index].memory_z, preactivations))
+        # self.tasks[self.task_index].memory_set_weights = torch.cat((self.tasks[self.task_index].memory_set_weights, torch.ones(batch_x.shape[0]).to(DEVICE)))
+
+
 
         # Get the number of unique labels in the updated memory set
-        unique_labels = torch.unique(self.tasks[self.task_index].memory_y)
-        Y = len(unique_labels)
+        # unique_labels = torch.unique(self.tasks[self.task_index].memory_y)
+        # Y = len(unique_labels)
+
+        # print(f"Y is {Y}")
 
         # Partition the memory set and weights based on labels
         # 32x32 for CIFAR only
-        memory_x_y = [torch.empty((0, self.tasks[self.task_index].memory_x.shape[1], 32, 32), device=DEVICE) for _ in range(Y)]
-        memory_y_y = [torch.empty((0,), dtype=torch.long, device=DEVICE) for _ in range(Y)]
-        memory_z_y = [torch.empty((0, self.tasks[self.task_index].memory_z.shape[1]), device=DEVICE) for _ in range(Y)]
-        memory_weights_y = [torch.ones((0,), device=DEVICE) for _ in range(Y)]  # Initialize weights to ones
 
-        for i in range(len(self.tasks[self.task_index].memory_x)):
-            x, y, z = self.tasks[self.task_index].memory_x[i], self.tasks[self.task_index].memory_y[i].long(), self.tasks[self.task_index].memory_z[i]
-            print(f"x is {x.size()}")
-            # print(f"memory_x.shape[1] has shape {self.tasks[self.task_index].memory_x.shape}")
-            # print(f"memory_x_y[i] has shape {memory_x_y[0]}")
+        # dataset_shape2 = batch_x.shape[2]
+        Y = 2
 
-            label_index = (unique_labels == y).nonzero(as_tuple=True)[0].item()
-            memory_x_y[label_index] = torch.cat((memory_x_y[label_index], x.unsqueeze(0)))
-            memory_y_y[label_index] = torch.cat((memory_y_y[label_index], y.unsqueeze(0)))
-            memory_z_y[label_index] = torch.cat((memory_z_y[label_index], z.unsqueeze(0)))
-            memory_weights_y[label_index] = torch.cat((memory_weights_y[label_index], self.tasks[self.task_index].memory_set_weights[i].unsqueeze(0)))
+        y_labels = torch.unique(batch_y)
+        D_x_y = [batch_x[batch_y == y] for y in y_labels]
+        D_y_y = [batch_y[batch_y == y] for y in y_labels]
+        D_z_y = [None for y in y_labels]
 
-        # Perform GCR subset selection for each label #EW what is this doing?
-        updated_memory_x = torch.empty((0, self.tasks[self.task_index].memory_x.shape[1]), device=DEVICE)
-        updated_memory_y = torch.empty((0,), dtype=torch.long, device=DEVICE)
-        updated_memory_z = torch.empty((0, self.tasks[self.task_index].memory_z.shape[1]), device=DEVICE)
-        updated_memory_weights = torch.empty((0,), device=DEVICE)
+        # print([m.shape for m in memory_x_y])
+        # memory_x_y = [torch.empty((0, self.tasks[self.task_index].memory_x.shape[1], dataset_shape2, dataset_shape2), device=DEVICE) for _ in range(2)]
+        # memory_y_y = [torch.empty((0,), dtype=torch.long, device=DEVICE) for _ in range(Y)]
+        # memory_z_y = [torch.empty((0, self.tasks[self.task_index].memory_z.shape[1]), device=DEVICE) for _ in range(Y)]
+
+        D_w_y = [torch.ones(m.shape[0]) for m in memory_x_y]  # Initialize weights to ones
+
+        # for i in range(len(self.tasks[self.task_index].memory_x):
+        #     x, y, z = self.tasks[self.task_index].memory_x[i], self.tasks[self.task_index].memory_y[i].long(), self.tasks[self.task_index].memory_z[i]
+        #     print(f"x is {x.size()}")
+        #     # print(f"memory_x.shape[1] has shape {self.tasks[self.task_index].memory_x.shape}")
+        #     # print(f"memory_x_y[i] has shape {memory_x_y[0]}")
+
+        #     label_index = (unique_labels == y).nonzero(as_tuple=True)[0].item()
+        #     memory_x_y[label_index] = torch.cat((memory_x_y[label_index], x.unsqueeze(0)))
+        #     memory_y_y[label_index] = torch.cat((memory_y_y[label_index], y.unsqueeze(0)))
+        #     memory_z_y[label_index] = torch.cat((memory_z_y[label_index], z.unsqueeze(0)))
+        #     memory_weights_y[label_index] = torch.cat((memory_weights_y[label_index], self.tasks[self.task_index].memory_set_weights[i].unsqueeze(0)))
+
+        # # Perform GCR subset selection for each label #EW what is this doing?
+        memory_x = torch.empty()
+        # memory_y = torch.empty((0,), dtype=torch.long, device=DEVICE)
+        memory_y = torch.empty()
+        # memory_z = torch.empty((0, self.tasks[self.task_index].memory_z.shape[1]), device=DEVICE)
+        memory_z = torch.empty()
+        # memory_weights = torch.empty((0,), device=DEVICE)
+        memory_weights = torch.empty()
+
 
         for y in range(Y): #EW this corresponds to line 5 in algorithm 2
             k_y = self.memory_set_manager.memory_set_size // Y
 
-            # If there are no samples for this label, skip
-            if len(memory_x_y[y]) == 0:
-                continue
+            # # If there are no samples for this label, skip
+            # if len(memory_x_y[y]) == 0:
+            #     continue
 
-            X_y = torch.empty((0, self.tasks[self.task_index].memory_x.shape[1]), device=DEVICE)
-            Z_y = torch.empty((0, self.tasks[self.task_index].memory_z.shape[1]), device=DEVICE)
-            W_X_y = torch.ones((0,), device=DEVICE)  # Initialize weights to ones
+            X_y = torch.empty()
+            Y_y = torch.empty()
+            Z_y = torch.empty()
+            W_X_y = torch.empty()  # Initialize weights to ones
 
             # Calculate initial residuals
-            print(f"initial memory_y_y[y] is {memory_y_y[y]}")
+            # print(f"initial memory_y_y[y] is {memory_y_y[y]}")
 
             # print(f"memory_x_y[{y}]: {memory_x_y[y]}, memory_y_y[{y}]: {memory_y_y[y]}, memory_z_y[{y}]: {memory_z_y[y]}, memory_weights_y[{y}]: {memory_weights_y[y]}, X_y: {X_y}, Z_y: {Z_y}, W_X_y: {W_X_y}")
-            r = self.grad_l_sub(memory_x_y[y], memory_y_y[y], memory_z_y[y], memory_weights_y[y], X_y, memory_y_y[y][:len(X_y)], Z_y, W_X_y, model)
+            r = self.grad_l_sub(D_x_y[y], D_y_y[y], D_z_y[y], D_w_y[y], X_y, Y_y, Z_y, W_X_y, model)
 
 
-            while len(X_y) <= k_y and self.l_sub(memory_x_y[y], memory_y_y[y], memory_z_y[y], memory_weights_y[y], X_y, memory_y_y[y][:len(X_y)], Z_y, W_X_y, model) >= self.memory_set_manager.epsilon:
+            # while len(X_y) <= k_y and self.l_sub(memory_x_y[y], memory_y_y[y], memory_z_y[y], memory_weights_y[y], X_y, memory_y_y[y][:len(X_y)], Z_y, W_X_y, model) >= self.memory_set_manager.epsilon:
+            
+            while len(X_y) <= k_y:
                 # Find the data point with maximum residual
                 e = torch.argmax(torch.abs(r))
 
                 # Update per-class subset
-                X_y = torch.cat((X_y, memory_x_y[y][e].unsqueeze(0)))
-                Z_y = torch.cat((Z_y, memory_z_y[y][e].unsqueeze(0)))
+                X_y = torch.cat((X_y, D_x_y[y][e].unsqueeze(0)))
+                Y_y = torch.cat((X_y, D_y_y[y][e].unsqueeze(0)))
+                # Z_y = torch.cat((Z_y, memory_z_y[y][e].unsqueeze(0)))
 
                 # Update per-class weights
-                W_X_y = self.minimize_l_sub(memory_x_y[y], memory_y_y[y], memory_z_y[y], memory_weights_y[y], X_y, memory_y_y[y][:len(X_y)], Z_y, model)
+                W_X_y = self.minimize_l_sub(D_x_y[y], D_y_y[y], D_z_y[y], D_w_y[y], X_y, Y_y, Z_y, W_X_y, model)
 
                 print(f"residuals y is {memory_y_y[y]}")
                 # Update residuals
-                r = self.grad_l_sub(memory_x_y[y], memory_y_y[y], memory_z_y[y], memory_weights_y[y], X_y, memory_y_y[y][:len(X_y)], Z_y, W_X_y, model)
+                r = self.grad_l_sub(D_x_y[y], D_y_y[y], D_z_y[y], D_w_y[y], X_y, Y_y, Z_y, W_X_y, model)
 
             # Update the overall subset and weights
-            updated_memory_x = torch.cat((updated_memory_x, X_y))
-            updated_memory_y = torch.cat((updated_memory_y, memory_y_y[y][:len(X_y)]))
-            updated_memory_z = torch.cat((updated_memory_z, Z_y))
-            updated_memory_weights = torch.cat((updated_memory_weights, W_X_y))
+            memory_x = torch.cat((memory_x, X_y))
+            memory_y = torch.cat((memory_y, Y_y))
+            memory_z = torch.cat((memory_z, Z_y))
+            memory_weights = torch.cat((memory_weights, W_X_y))
 
         # Update the memory set with the selected subset and weights
-        self.tasks[self.task_index].memory_x = updated_memory_x
-        self.tasks[self.task_index].memory_y = updated_memory_y
-        self.tasks[self.task_index].memory_z = updated_memory_z
-        self.tasks[self.task_index].memory_set_weights = updated_memory_weights
+        self.tasks[self.task_index].memory_x = memory_x
+        self.tasks[self.task_index].memory_y = memory_y
+        self.tasks[self.task_index].memory_z = memory_z
+        self.tasks[self.task_index].memory_set_weights = memory_weights
 
-    def l_rep(self, model, x, y, z, w):
+    
+
+    def l_rep(self, D_x_y, D_y_y, D_y_z, D_w_y, X_y, Y_y, Z_y, W_y, model):
         # Move the data to the appropriate device
         y = torch.from_numpy(np.array([y.cpu()]))
         x, y, z = x.to(DEVICE), y.to(DEVICE), z.to(DEVICE)
@@ -420,9 +446,6 @@ class ContinualLearningManager(ABC):
     
         y_one_hot_vector[y] = 1
 
-        
-
-        # h_theta = h_theta.squeeze()
         print(f"Shape of z: {z.shape}, Shape of h_theta: {h_theta.shape}")
 
         # Ensure z and h_theta are 1D
@@ -1089,6 +1112,8 @@ class ContinualLearningManager(ABC):
         else:
             batch_size = batch
 
+        print(f"batch size in managers is {batch_size}")
+
         # Put into batches and create Tensor Dataset
         train_dataset = TensorDataset(combined_train_x, combined_train_y)
         train_dataloader = DataLoader(
@@ -1249,7 +1274,21 @@ class ContinualLearningManager(ABC):
             label_weights.append(torch.from_numpy(weights).float())
         return label_list, label_weights
     
+# class L_sub(nn.Module):
+#   """inner loss function for selection strategies."""
 
+#   def __init__(self, alpha=0.1, beta=0.5):
+#     super(L_sub, self).__init__()
+#     self.alpha = alpha
+#     self.beta = beta
+#     self.ce_loss = nn.CrossEntropyLoss(reduction='none')
+#     self.mse_loss = nn.MSELoss(reduction='none')
+
+#   def forward(self, outputs, targets, logits, weights=None):
+#     loss = self.beta * self.ce_loss(outputs, targets) + self.alpha * torch.mean(
+#         self.mse_loss(outputs, logits), 1
+#     )
+#     return loss * weights
 
 
 class Cifar100Manager(ContinualLearningManager, ABC):
