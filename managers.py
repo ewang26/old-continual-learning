@@ -433,40 +433,54 @@ class ContinualLearningManager(ABC):
 
     
 
-    def l_rep(self, D_x_y, D_y_y, D_y_z, D_w_y, X_y, Y_y, Z_y, W_y, model):
+    def l_rep(self, x, y, z, model):
         # Move the data to the appropriate device
-        y = torch.from_numpy(np.array([y.cpu()]))
-        x, y, z = x.to(DEVICE), y.to(DEVICE), z.to(DEVICE)
+        # y = torch.from_numpy(np.array([y.cpu()]))
+        # x, y, z = x.to(DEVICE), y.to(DEVICE), z.to(DEVICE)
 
-        x = x.view(-1, 3, 32, 32)
-        print(f"x shape before model is: {x.shape}")
-        logits, h_theta = model(x, return_preactivations=True)
+        # x = x.view(-1, 3, 32, 32)
+        print(f"full data shape before model is: {D_x_y.shape}")
+        # logits, h_theta = model(x, return_preactivations=True)
         
-        y_one_hot_vector = np.zeros(10)
+        # y_one_hot_vector = np.zeros(10)
     
-        y_one_hot_vector[y] = 1
+        # y_one_hot_vector[y] = 1
 
-        print(f"Shape of z: {z.shape}, Shape of h_theta: {h_theta.shape}")
+        # print(f"Shape of z: {z.shape}, Shape of h_theta: {h_theta.shape}")
 
         # Ensure z and h_theta are 1D
         # if z.dim() != 1 or h_theta.dim() != 1:
         #     raise ValueError(f"Expected 1D tensors, got z with shape {z.shape} and h_theta with shape {h_theta.shape}")
 
-        print(f"y is {y}")
-        distill_loss = self.memory_set_manager.alpha * w * torch.norm(z - h_theta, dim=0) ** 2
-        ce_loss = self.memory_set_manager.beta * w * nn.CrossEntropyLoss()(logits, y)  # Cast y to LongTensor
+        # print(f"y is {y}")
+        # distill_loss = self.memory_set_manager.alpha * w * torch.norm(z - h_theta, dim=0) ** 2
+        # ce_loss = self.memory_set_manager.beta * w * nn.CrossEntropyLoss()(logits, y)  # Cast y to LongTensor
+        ce_loss = self.memory_set_manager.beta * w * nn.CrossEntropyLoss()(nn.SoftMax(x), y)
 
-        return distill_loss + ce_loss
+        # return distill_loss + ce_loss
+        return ce_loss
+
+    def l_sub(self, D_x, D_y, D_z, W_D, X_y, Y_y, Z_y, W_x_y, model):
+        losses_D = [self.l_rep(x, y, z, w) for x, y, z, w in zip(D_x, D_y, D_z, W_D)]
+        loss_D = torch.sum(torch.stack(losses_D))
+
+        
+        losses_X = [self.l_rep(x, y, z, w) for x, y, z, w in zip(X_y, Y_y, Z_y, W_x_y)]
+        loss_X = torch.sum(torch.stack(losses_X))
+
+        loss_diff = [np.abs(loss_d - loss_x)**2 for loss_d, loss_x in zip(loss_D, loss_X)]
+
+        return loss_diff
 
 
-    def grad_l_sub(self, D_x, D_y, D_z, W_D, X, X_y, Z, W_X, model):
+    def grad_l_sub(self, D_x, D_y, D_z, W_D, X_y, Y_y, Z_y, W_x_y, model):
         # Move the data to the appropriate device
-        D_x, D_y, D_z, X, X_y, Z = D_x.to(DEVICE), D_y.to(DEVICE), D_z.to(DEVICE), X.to(DEVICE), X_y.to(DEVICE), Z.to(DEVICE)
+        # D_x, D_y, D_z, X, X_y, Z = D_x.to(DEVICE), D_y.to(DEVICE), D_z.to(DEVICE), X.to(DEVICE), X_y.to(DEVICE), Z.to(DEVICE)
 
-        print(f"D_y is {D_y}")
         # Compute the gradients for the full dataset
         model.zero_grad()
-        losses_D = [self.l_rep(model, x, y, z, w) for x, y, z, w in zip(D_x, D_y, D_z, W_D)]
+
+        losses_D = [self.l_rep(x, y, z, w) for x, y, z, w in zip(D_x, D_y, D_z, W_D)]
         print(f"losses_D: {losses_D}")  # Debug: Print losses_D
         if not losses_D:
             raise ValueError("losses_D is empty")
@@ -481,7 +495,7 @@ class ContinualLearningManager(ABC):
         # Debug prints
         print(f"X: {X}, X_y: {X_y}, Z: {Z}, W_X: {W_X}")
         
-        losses_X = [self.l_rep(model, x, y, z, w) for x, y, z, w in zip(X, X_y, Z, W_X)]
+        losses_X = [self.l_rep(x, y, z, w) for x, y, z, w in zip(X_y, Y_y, Z_y, W_x_y)]
         print(f"losses_X: {losses_X}")  # Debug: Print losses_X
         # if not losses_X:
         #     raise ValueError("losses_X is empty")
@@ -495,29 +509,23 @@ class ContinualLearningManager(ABC):
         grads_X = [param.grad.clone() for param in model.parameters()]
 
         # Return the difference in gradients
-        grad_diff = [grad_d - grad_x for grad_d, grad_x in zip(grads_D, grads_X)]
+        grad_diff = [np.abs(grad_d - grad_x)**2 for grad_d, grad_x in zip(grads_D, grads_X)]
 
         return grad_diff
     
-    def minimize_l_sub(self, D_x, D_y, D_z, W_D, X, X_y, Z, model):
+    def minimize_l_sub(self, D_x, D_y, D_z, W_D, X_y, Y_y, Z_y, W_x_y, model):
 
-        W_X = torch.ones(len(X), device=DEVICE, requires_grad=True)
+        W_X = torch.ones(len(D_x), device=DEVICE, requires_grad=True)
 
         optimizer = torch.optim.SGD([W_X], lr=0.01)
 
         for _ in range(100):  # Number of optimization steps
             optimizer.zero_grad()
-            loss = self.l_sub(D_x, D_y, D_z, W_D, X, X_y, Z, W_X, model)
+            loss = self.l_sub(D_x, D_y, D_z, W_D, X_y, Y_y, Z_y, W_x_y, model)
             loss.backward()
             optimizer.step()
 
         return W_X.detach()
-
-
-
-
-
-
 
 
 
