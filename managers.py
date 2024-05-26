@@ -318,9 +318,12 @@ class ContinualLearningManager(ABC):
                     batch_y = batch_y.float()
                     batch_y.requires_grad=True 
                     print(batch_y)
+                    print(f"batch x shape {batch_x.shape}")
 
+                    print("before update")
                     # print(f"model is {model.conv_block[4].return_indices}")
                     self.update_memory_gcr(batch_x, batch_y, grad_sample, model)
+                    print("after update")
 
     def update_memory_gcr(self, batch_x, batch_y, grad_sample, model):
         # Move the batch data and memory data to the appropriate device
@@ -384,13 +387,13 @@ class ContinualLearningManager(ABC):
         # need to provide a shape to start with
 
         if len(batch_x.shape) == 4:
-            memory_x = torch.empty((0, batch_x.size(1), batch_x.size(2), batch_x.size(2)), requires_grad=True) 
-            memory_y = torch.empty((0,), requires_grad=True)
-            memory_weights = torch.empty((0,), requires_grad=True)
+            memory_x = torch.empty((0, batch_x.size(1), batch_x.size(2), batch_x.size(2))) 
+            memory_y = torch.empty((0,))
+            memory_weights = torch.empty((0,))
         if len(batch_x.shape) == 2:
-            memory_x = torch.empty((0, batch_x.size(1)), requires_grad=True) 
-            memory_y = torch.empty((0,), requires_grad=True)
-            memory_weights = torch.empty((0,), requires_grad=True)
+            memory_x = torch.empty((0, batch_x.size(1))) 
+            memory_y = torch.empty((0,))
+            memory_weights = torch.empty((0,))
 
         for y in range(Y): #EW this corresponds to line 5 in algorithm 2
             k_y = self.memory_set_manager.memory_set_size // Y
@@ -399,7 +402,7 @@ class ContinualLearningManager(ABC):
             # if len(memory_x_y[y]) == 0:
             #     continue
 
-            print(f"batch x shape {batch_x.shape}")
+            print(f"Class number within task is {y}")
 
             if len(batch_x.shape) == 4:
                 X_y = torch.empty((0, batch_x.size(1), batch_x.size(2), batch_x.size(2)), requires_grad=True) 
@@ -426,40 +429,42 @@ class ContinualLearningManager(ABC):
                 X_y = torch.cat((X_y, D_x_y[y][e].unsqueeze(0)))
                 Y_y = torch.cat((Y_y, D_y_y[y][e].unsqueeze(0)))
 
-                print("hi")
+                # print("hi")
                 # Update per-class weights
                 W_X_y = self.minimize_l_sub(D_x_y[y], D_y_y[y], D_w_y[y], X_y, Y_y, model)
 
-                print("hello")
+                # print("hello")
                 # print(f"residuals y is {memory_y_y[y]}")
                 # Update residuals
                 r = self.grad_l_sub(D_x_y[y], D_y_y[y], D_w_y[y], X_y, Y_y, W_X_y, model)
-                print(f"residuals is {r}")
+                # print(f"residuals is {r}")
                 e = torch.argmax(torch.abs(r))
 
+            print(102)
             # Update the overall subset and weights
-            memory_x = torch.cat((memory_x, X_y))
-            memory_y = torch.cat((memory_y, Y_y))
-            memory_weights = torch.cat((memory_weights, W_X_y))
+            memory_x = torch.cat((memory_x, X_y.cpu().detach()))
+            memory_y = torch.cat((memory_y, Y_y.cpu().detach()))
+            memory_weights = torch.cat((memory_weights, W_X_y.cpu().detach()))
 
         # Update the memory set with the selected subset and weights
+        print("101")
         self.tasks[self.task_index].memory_x = memory_x
-        self.tasks[self.task_index].memory_y = memory_y
+        self.tasks[self.task_index].memory_y = memory_y.long()
         self.tasks[self.task_index].memory_set_weights = memory_weights
 
     def l_rep(self, x, y, w, model):
         x = x.to(DEVICE)
         y = y.to(DEVICE)
         w = w.to(DEVICE)
-        print(f"x shape is: {model(x).shape} and y shape is: {y.shape}")
-        print(1)
+        # print(f"x shape is: {model(x).shape} and y shape is: {y.shape}")
+        # print(1)
 
-        print(f"cross ent is {nn.CrossEntropyLoss()(model(x), y.long())}")
+        # print(f"cross ent is {nn.CrossEntropyLoss()(model(x), y.long())}")
 
         ce_loss = self.memory_set_manager.beta * w * nn.CrossEntropyLoss()(model(x), y.long())
         # ce_loss = torch.ones((5000,), requires_grad=True)
-        print(f"ce loss {ce_loss.requires_grad}")
-        print(10)
+        # print(f"ce loss {ce_loss.requires_grad}")
+        # print(10)
         return ce_loss
 
     # def compute_total_gradients(self, outputs, model):
@@ -484,9 +489,9 @@ class ContinualLearningManager(ABC):
 
     def compute_total_gradients(self, outputs, model):
 
-        print(f"outputs {outputs.requires_grad}")
+        # print(f"outputs {outputs.requires_grad}")
         scalar_loss = outputs.sum()
-        print(f"scalar {scalar_loss.requires_grad}")
+        # print(f"scalar {scalar_loss.requires_grad}")
         
         # Calculate gradients of the summed loss with respect to the model parameters
         grads = torch.autograd.grad(scalar_loss, model.parameters(), allow_unused=True, create_graph=True)
@@ -497,12 +502,12 @@ class ContinualLearningManager(ABC):
         
         # Process each gradient, flatten and detach from the current graph for further operations
         for grad in grads:
-            print(f"34 {grad.requires_grad}")
+            # print(f"34 {grad.requires_grad}")
             if grad is not None:
                 # Convert to numpy after detaching and moving to cpu
                 # flat_grad = grad.cpu().detach().numpy().flatten()
                 flat_grad = grad.cpu().flatten()
-                print(f"108 {flat_grad.requires_grad}")
+                # print(f"108 {flat_grad.requires_grad}")
                 init_vals.append(flat_grad)
         
         # Concatenate all gradients to form a single vector
@@ -512,22 +517,22 @@ class ContinualLearningManager(ABC):
 
     def l_sub(self, D_x, D_y, W_D, X_y, Y_y, W_X_y, model):    
 
-        print(f"{D_x.requires_grad}, {D_y.requires_grad}, {W_D.requires_grad}, {X_y.requires_grad}, {Y_y.requires_grad}, {W_X_y.requires_grad}")
+        # print(f"{D_x.requires_grad}, {D_y.requires_grad}, {W_D.requires_grad}, {X_y.requires_grad}, {Y_y.requires_grad}, {W_X_y.requires_grad}")
 
         # print(f"shape of l_rep is {self.l_rep(D_x, D_y, W_D, model).shape}")
 
         D_loss = self.compute_total_gradients(self.l_rep(D_x, D_y, W_D, model), model)
-        print(f"1 {D_loss.requires_grad}")
+        # print(f"1 {D_loss.requires_grad}")
 
-        print(7)
+        # print(7)
         if X_y.numel() == 0:
             X_loss = 0
         else:
-            print(f"xy is {X_y}, yy is {Y_y}, wxy is {W_X_y}")
-            print(6)
+            # print(f"xy is {X_y}, yy is {Y_y}, wxy is {W_X_y}")
+            # print(6)
             X_loss = self.compute_total_gradients(self.l_rep(X_y, Y_y, W_X_y, model), model)
     
-        print(f"2 {X_loss.requires_grad}")
+        # print(f"2 {X_loss.requires_grad}")
 
         
         # for idx, grad in enumerate(grad_X): 
@@ -547,28 +552,23 @@ class ContinualLearningManager(ABC):
 
     def grad_l_sub(self, D_x, D_y, W_D, X_y, Y_y, W_X_y, model):
 
-        print(f"{D_x.shape}, {D_y.shape}, {W_D.shape}")
-        print(f"requires grad {self.l_sub(D_x, D_y, W_D, X_y, Y_y, W_X_y, model).requires_grad}")
-        print(f"Wxy {W_X_y.requires_grad}")
+        # print(f"{D_x.shape}, {D_y.shape}, {W_D.shape}")
+        # print(f"requires grad {self.l_sub(D_x, D_y, W_D, X_y, Y_y, W_X_y, model).requires_grad}")
+        # print(f"Wxy {W_X_y.requires_grad}")
         residuals = torch.autograd.grad(self.l_sub(D_x, D_y, W_D, X_y, Y_y, W_X_y, model), W_X_y, create_graph=True)
-        return residuals
+        return residuals[0]
 
     
     def minimize_l_sub(self, D_x, D_y, W_D, X_y, Y_y, model):
-
-        print("2")
         # W_X = torch.ones(len(D_x), device=DEVICE, requires_grad=True)
         W_X_y = torch.ones(len(X_y), device=DEVICE, requires_grad=True)
 
-        print("3")
         optimizer = torch.optim.SGD([W_X_y], lr=0.01)
 
         for _ in range(100):  # Number of optimization steps
             optimizer.zero_grad()
-            print("4")
             loss = self.l_sub(D_x, D_y, W_D, X_y, Y_y, W_X_y, model)
-            print("5")
-            print(f"loss grad {loss.requires_grad}")
+            # print(f"loss grad {loss.requires_grad}")
             loss.backward(retain_graph=True)
             optimizer.step()
 
@@ -636,7 +636,9 @@ class ContinualLearningManager(ABC):
             # Only select outputs for current labels
             outputs_splice = outputs[:, current_labels]
             #print(outputs_splice.type(), batch_y.type())
+            print("before evaluate")
             loss = criterion(outputs_splice, batch_y)
+            print("after evaluate")
             loss.backward()
 
             # Get gradient norms

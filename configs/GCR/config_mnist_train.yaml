@@ -6,7 +6,7 @@ wandb_profile: alanhsu
 
 # Memory set hyperparameters
 memory_set_manager: GCR
-use_memory_set: True
+use_memory_set: True # never false
 grad_type: None
 p: dummar_var
 use_random_img: False
