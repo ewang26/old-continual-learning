@@ -18,8 +18,8 @@ num_ideal_models: 1
 # num_samples: [10, 10, 10, 10, 10, 10, 10, 10, 10, 10]
 #num_samples: [1, 1, 1, 1, 1, 1, 1, 1, 1]
 
-p_arr: [0.001]
-num_samples: [1] 
+p_arr: [0.001, 0.002]
+num_samples: [2, 2] 
 
 #debugging 
 train_debug: False
