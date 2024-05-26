@@ -384,23 +384,23 @@ class ContinualLearningManager(ABC):
 
             X_y = torch.empty((0, batch_x.size(1), batch_x.size(2), batch_x.size(2))) 
             Y_y = torch.empty((0,))
-            W_X_y = torch.empty((0,))
+            W_X_y = torch.empty((0,), requires_grad=True)
 
             # Calculate initial residuals
             # print(f"initial memory_y_y[y] is {memory_y_y[y]}")
 
             # print(f"memory_x_y[{y}]: {D_x_y[y]}, memory_y_y[{y}]: {D_y_y[y]}, memory_z_y[{y}]: {D_z_y[y]}, memory_weights: {D_w_y[y]}")
-            r = self.grad_l_sub(D_x_y[y], D_y_y[y], D_w_y[y], X_y, Y_y, W_X_y, model)
+            # r = self.grad_l_sub(D_x_y[y], D_y_y[y], D_w_y[y], X_y, Y_y, W_X_y, model)
 
             # while len(X_y) <= k_y and self.l_sub(memory_x_y[y], memory_y_y[y], memory_z_y[y], memory_weights_y[y], X_y, memory_y_y[y][:len(X_y)], Z_y, W_X_y, model) >= self.memory_set_manager.epsilon:
             
-            while len(X_y) <= k_y:
-                # Find the data point with maximum residual
-                e = torch.argmax(torch.abs(r))
+            e = 0  
 
+            while len(X_y) <= k_y:  
+                # Find the data point with maximum residual
                 # Update per-class subset
                 X_y = torch.cat((X_y, D_x_y[y][e].unsqueeze(0)))
-                Y_y = torch.cat((X_y, D_y_y[y][e].unsqueeze(0)))
+                Y_y = torch.cat((Y_y, D_y_y[y][e].unsqueeze(0)))
 
                 # Update per-class weights
                 W_X_y = self.minimize_l_sub(D_x_y[y], D_y_y[y], D_w_y[y], X_y, Y_y, model)
@@ -408,6 +408,7 @@ class ContinualLearningManager(ABC):
                 print(f"residuals y is {memory_y_y[y]}")
                 # Update residuals
                 r = self.grad_l_sub(D_x_y[y], D_y_y[y], D_w_y[y], X_y, Y_y, W_X_y, model)
+                e = torch.argmax(torch.abs(r))
 
             # Update the overall subset and weights
             memory_x = torch.cat((memory_x, X_y))
@@ -428,25 +429,25 @@ class ContinualLearningManager(ABC):
         print(ce_loss.requires_grad)
         return ce_loss
 
-    def compute_total_gradients(self, outputs, model):
-        print(f"loss is {outputs}")
-        init_vals = []
-        for i, output in enumerate(outputs):
-            init_grad = []
-            # print(f"ce loss {output.requires_grad}")
-            # print(f"model {model.parameters()}")
-            # print(f"output shape {output.shape} and val {output}")
-            grad_X = torch.autograd.grad(output, model.parameters(), allow_unused=True, create_graph=True)   
+    # def compute_total_gradients(self, outputs, model):
+    #     print(f"loss is {outputs}")
+    #     init_vals = []
+    #     for i, output in enumerate(outputs):
+    #         init_grad = []
+    #         # print(f"ce loss {output.requires_grad}")
+    #         # print(f"model {model.parameters()}")
+    #         # print(f"output shape {output.shape} and val {output}")
+    #         grad_X = torch.autograd.grad(output, model.parameters(), allow_unused=True, create_graph=True)   
             
-            for idx, grad in enumerate(grad_X): 
-                # print(f"Gradient {idx + 1} shape: {grad.shape}") 
-                # print(f"Gradient {idx + 1} values: {grad}")
-                if grad != None:
-                    a = grad.cpu().detach().numpy().flatten()
-                    init_grad.append(a)
-            init_vals.append(np.concatenate(init_grad).flatten())
+    #         for idx, grad in enumerate(grad_X): 
+    #             # print(f"Gradient {idx + 1} shape: {grad.shape}") 
+    #             # print(f"Gradient {idx + 1} values: {grad}")
+    #             if grad != None:
+    #                 a = grad.cpu().detach().numpy().flatten()
+    #                 init_grad.append(a)
+    #         init_vals.append(np.concatenate(init_grad).flatten())
 
-        return np.sum(np.array(init_vals), axis=0)
+    #     return np.sum(np.array(init_vals), axis=0)
 
     def compute_total_gradients(self, outputs, model):
 
@@ -464,7 +465,6 @@ class ContinualLearningManager(ABC):
                 # Convert to numpy after detaching and moving to cpu
                 # flat_grad = grad.cpu().detach().numpy().flatten()
                 flat_grad = grad.cpu().flatten()
-
                 init_vals.append(flat_grad)
         
         # Concatenate all gradients to form a single vector
@@ -472,10 +472,7 @@ class ContinualLearningManager(ABC):
 
         return total_gradient
 
-    def l_sub(self, D_x, D_y, W_D, X_y, Y_y, W_X_y, model):
-        
-        # losses_X = self.l_rep(D_x, D_y, D_z)
-        
+    def l_sub(self, D_x, D_y, W_D, X_y, Y_y, W_X_y, model):        
         print(f"shape of l_rep is {self.l_rep(D_x, D_y, W_D, model).shape}")
         D_loss = self.compute_total_gradients(self.l_rep(D_x, D_y, W_D, model), model)
 
@@ -502,46 +499,11 @@ class ContinualLearningManager(ABC):
     def grad_l_sub(self, D_x, D_y, W_D, X_y, Y_y, W_X_y, model):
 
         print(f"{D_x.shape}, {D_y.shape}, {W_D.shape}")
+        print(f"requires grad {self.l_sub(D_x, D_y, W_D, X_y, Y_y, W_X_y, model).requires_grad}")
+        print(f"Wxy {W_X_y.requires_grad}")
         residuals = torch.autograd.grad(self.l_sub(D_x, D_y, W_D, X_y, Y_y, W_X_y, model), W_X_y, create_graph=True)
         return residuals
 
-        # # Move the data to the appropriate device
-        # # D_x, D_y, D_z, X, X_y, Z = D_x.to(DEVICE), D_y.to(DEVICE), D_z.to(DEVICE), X.to(DEVICE), X_y.to(DEVICE), Z.to(DEVICE)
-
-        # # Compute the gradients for the full dataset
-
-        # model.zero_grad()
-        
-        # losses_X = [self.l_rep(x, y, w) for x, y, w in zip(D_x, D_y, W_D)]
-        # print(f"losses_X: {losses_X}")  # Debug: Print losses_X
-        # # if not losses_X:
-        # #     raise ValueError("losses_X is empty")
-
-        # if len(losses_X) != 0:
-        #     loss_X = torch.sum(torch.stack(losses_X))
-        # else: 
-        #     loss_X = np.sum(losses_X) # how to compute gradient on empty list?
-        # loss_X.backward()
-        # grads_X = [param.grad.clone() for param in model.parameters()]
-
-        # model.zero_grad()
-        
-        # losses_X = [self.l_rep(x, y, w) for x, y, w in zip(X_y, Y_y, W_x_y)]
-        # print(f"losses_X: {losses_X}")  # Debug: Print losses_X
-        # # if not losses_X:
-        # #     raise ValueError("losses_X is empty")
-
-        # if len(losses_X) != 0:
-        #     loss_X = torch.sum(torch.stack(losses_X))
-        # else: 
-        #     loss_X = np.sum(losses_X) # how to compute gradient on empty list?
-        # loss_X.backward()
-        # grads_X = [param.grad.clone() for param in model.parameters()]
-
-        # # Return the difference in gradients
-        # grad_diff = [np.abs(grad_x)**2 for grad_x in grads_X]
-
-        # return grad_diff
     
     def minimize_l_sub(self, D_x, D_y, W_D, X_y, Y_y, model):
 
@@ -556,7 +518,7 @@ class ContinualLearningManager(ABC):
             loss.backward()
             optimizer.step()
 
-        return W_X_y.detach()
+        return W_X_y
 
 
 
