@@ -74,13 +74,13 @@ class CifarNet(nn.Module):
             nn.ReLU(),
             nn.Conv2d(l1_out_channels, l2_out_channels, 3),
             nn.ReLU(),
-            nn.MaxPool2d(2),
+            nn.MaxPool2d(2, return_indices=True),
             #nn.Dropout(p=0.25),
             nn.Conv2d(l2_out_channels, l3_out_channels, 3, padding=1),
             nn.ReLU(),
             nn.Conv2d(l3_out_channels, l4_out_channels, 3),
             nn.ReLU(),
-            nn.MaxPool2d(2),
+            nn.MaxPool2d(2, return_indices=True),
             #nn.Dropout(p=0.25),
         )
         self.linear_block = nn.Sequential(
