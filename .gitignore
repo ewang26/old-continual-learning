@@ -6,7 +6,8 @@
 **/wandb/
 #models/mnist_split_old
 **/model/cifar_split_old
-#**/models/
+models/
+myenv/
 logs/
 models/cifar10_split_old/
 models/cifar10_split/
