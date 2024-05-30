@@ -20,30 +20,33 @@ num_samples: [10]
 train_debug: False
 
 # Continual learning hyperparameters
-#learning_manager: mnist_split
-learning_manager: cifar10_split
+learning_manager: mnist_split
+#learning_manager: cifar10_split
 
 # Training hyperparameters
 lr: 0.001
 batch_size: 256
 random_seed: 0xC0FFEE
-
+epochs: 2
 #epochs: 30
-#CHANGED
-epochs: 50
 
+# Model arch 
+model:
+ type: mlp 
+ params: 
+   sizes: [784, 100, 10] 
+   acts: [relu]
 
 #Example CNN
-model: 
-  type: cnn
-  params: 
-    in_channels: 3 
-    out_channels: 10
-    l1_out_channels: 32
-    l2_out_channels: 32
-    l3_out_channels: 64
-    l4_out_channels: 64
+# model: 
+#   type: cnn
+#   params: 
+#     in_channels: 3 
+#     out_channels: 10
+#     l1_out_channels: 32
+#     l2_out_channels: 32
+#     l3_out_channels: 64
+#     l4_out_channels: 64
 
 
-#CHANGED
-model_save_dir: models/cifar10_split
+model_save_dir: models/mnist_split_parallel

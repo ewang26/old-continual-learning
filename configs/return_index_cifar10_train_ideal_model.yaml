@@ -30,8 +30,8 @@ random_seed: 0xC0FFEE
 
 #epochs: 30
 #CHANGED
-epochs: 50
-
+# epochs: 50
+epochs: 2
 
 #Example CNN
 model: 
@@ -46,4 +46,5 @@ model:
 
 
 #CHANGED
-model_save_dir: models/cifar10_split
+# model_save_dir: models/cifar10_split
+model_save_dir: models/return_index_cifar10_split
