@@ -27,8 +27,11 @@ learning_manager: cifar10_split
 lr: 0.001
 batch_size: 256
 random_seed: 0xC0FFEE
-epochs: 50
+
 #epochs: 30
+#CHANGED
+# epochs: 50
+epochs: 2
 
 #Example CNN
 model: 
@@ -42,4 +45,6 @@ model:
     l4_out_channels: 64
 
 
-model_save_dir: models/cifar10_split
+#CHANGED
+# model_save_dir: models/cifar10_split
+model_save_dir: models/parallel_cifar10_split
