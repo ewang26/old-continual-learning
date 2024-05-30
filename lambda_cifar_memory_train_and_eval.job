@@ -10,7 +10,7 @@
 #SBATCH -e logs/train_eval_%j.err
 
 # export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:128
-export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:256
+export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:128
 
 
 # Define paths
@@ -22,8 +22,6 @@ cd ${MAIN_PATH}
 
 # Activate the virtual environment
 source "${VENV_PATH}/bin/activate"
-
-nvidia-smi
 
 # Run class balanced training and evaluation
 # python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/class_balanced/config_cifar10_grad_eval.yaml

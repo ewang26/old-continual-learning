@@ -243,7 +243,7 @@ class ContinualLearningManager(ABC):
                 # now we go through samples 1 by 1
                 for batch_x, batch_y in terminal_train_dataloader:
                     #added this
-                    batch_x, batch_y = batch_x.to(DEVICE), batch_y.to(DEVICE)
+                    # batch_x, batch_y = batch_x.to(DEVICE), batch_y.to(DEVICE)
                         
                     # need to do GSS update
                     # zero param gradients just in case
@@ -291,7 +291,7 @@ class ContinualLearningManager(ABC):
             criterion = nn.CrossEntropyLoss()   # is this necessary?
             for batch_x, batch_y in terminal_train_dataloader:
                 #added line below:
-                batch_x, batch_y = batch_x.to(DEVICE), batch_y.to(DEVICE)
+                # batch_x, batch_y = batch_x.to(DEVICE), batch_y.to(DEVICE)
                 for param in model.parameters():
                     param.grad = None
                 outputs = model(batch_x)
