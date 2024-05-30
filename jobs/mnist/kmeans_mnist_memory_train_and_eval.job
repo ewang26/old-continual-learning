@@ -30,8 +30,8 @@ source "${VENV_PATH}/bin/activate"
 # python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/lambda/config_cifar10_train.yaml
 
 # Run k-means training and evaluation
-python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/kmeans/config_mnist_grad_eval.yaml
-python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/kmeans/config_mnist_train.yaml
+# python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/kmeans/config_mnist_grad_eval.yaml
+# python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/kmeans/config_mnist_train.yaml
 
 # Run GSS training and evaluation
 # python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/GSS/config_cifar10_grad_eval.yaml
