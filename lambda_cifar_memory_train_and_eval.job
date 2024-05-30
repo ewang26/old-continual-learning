@@ -9,7 +9,9 @@
 #SBATCH -o logs/train_eval_%j.out
 #SBATCH -e logs/train_eval_%j.err
 
-export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:128
+# export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:128
+export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:256
+
 
 # Define paths
 MAIN_PATH="/n/home12/thb489/continual-learning"
