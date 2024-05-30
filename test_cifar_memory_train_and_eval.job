@@ -23,4 +23,5 @@ source "${VENV_PATH}/bin/activate"
 
 # Run the scripts and redirect output to log files
 python "${MAIN_PATH}/main_batch.py" --config "${MAIN_PATH}/configs/test/config_cifar10_grad_eval.yaml"
-python "${MAIN_PATH}/main_batch.py" --config "${MAIN_PATH}/configs/test/config_cifar10_train.yaml"
+#python "${MAIN_PATH}/main_batch.py" --config "${MAIN_PATH}/configs/test/config_cifar10_train.yaml"
+deactivate
