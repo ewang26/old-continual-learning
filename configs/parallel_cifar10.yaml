@@ -5,26 +5,31 @@ wandb_profile: alanhsu
 
 
 # Memory set hyperparameters
-memory_set_manager: GSS
+memory_set_manager: random
 use_memory_set: True
 grad_type: ['past'] # can do 'past' or 'present'
 p: dummar_var
 use_random_img: False
+num_ideal_models: 2
 #num_samples: 10
 
 # for gradient evaluating
-#p_arr: [0.2, 0.5, 1]
-#p_arr: [0.001, 0.5]
-#num_samples: [2, 2]
-p_arr: [0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1]
-num_samples: [10,10,10,10,10,10,10,10,10,10]
-#num_samples: [1, 1, 1, 1, 1, 1, 1, 1, 1]
-num_ideal_models: 10
+#p_arr: [0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1]
+# p_arr: [0.001, 0.5]
+# num_samples: [2, 2]
+#num_samples: [5,5,5,5,5,5,5,5,5,5]
+#num_samples: [10, 10, 10, 10, 10, 10, 10, 10, 10, 10]
 
-#p_arr: [0.01]
-#num_samples: [1] 
+# p_arr: [0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1]
+# num_samples: [10, 10, 10, 10, 10, 10, 10, 10, 10, 10]
 
-#debugging 
+# p_arr: [1]
+# num_samples: [10]
+
+p_arr: [0.0015, 0.0025]
+num_samples: [2, 2]
+
+#debugging r
 train_debug: False
 
 #training
@@ -50,7 +55,6 @@ epochs: 50
 #    acts: [relu]
 
 #Example CNN
-#Example CNN
 model: 
   type: cnn
   params: 
@@ -64,5 +68,5 @@ model:
 
 #model_save_dir: models/mnist_split #/1/
 #model_save_dir: models/cifar10_split
-# model_load_dir: models/mnist_split
-model_load_dir: models/cifar10_split
+#model_load_dir: models/mnist_split
+model_load_dir: models/parallel_cifar10
