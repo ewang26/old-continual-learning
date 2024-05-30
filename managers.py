@@ -380,48 +380,42 @@ class ContinualLearningManager(ABC):
 
             X_y_w = torch.zeros(batch_x.size(1), requires_grad=True).to(DEVICE)
             r = self.grad_l_sub(D_x_y[y], D_y_y[y], D_w_y[y], D_x_y[y], D_y_y[y], X_y_w, model)
-            e_indices = []
 
-            while len(X_y) <= k_y and self.l_sub(D_x_y[y], D_y_y[y], D_w_y[y], X_y, Y_y, W_X_y, model) > 0.01:  
+            while len(X_y) <= k_y and self.l_sub2(D_x_y[y], D_y_y[y], D_w_y[y], X_y, Y_y, W_X_y, model) > 0.01:  
                 # print(f"e at start of loop is {e}")
                 # Find the data point with maximum residual
                 # Update per-class subset
-                
-                e = torch.argmax(r)
-                e_indices.append(e)
-                # print(f"the number of elements for the memory set")
-                # print(f"the memory element selected is at: {e}")
-                print(f"e_indices is: {e_indices}")
-                print(f"Y_y before append is: {Y_y}")
+                e = torch.argmax(torch.abs(r))
+                print(f"new e is: {e}")
+                # print(f"Y_y before append is: {Y_y}")
 
                 X_y = torch.cat((X_y, D_x_y[y][e].unsqueeze(0)))
                 Y_y = torch.cat((Y_y, D_y_y[y][e].unsqueeze(0)))
 
-                print(f"Y_y after append is: {Y_y}")
-                print(f"W_X_y before minimize is: {W_X_y}")
+                # print(f"Y_y after append is: {Y_y}")
+                # print(f"W_X_y before minimize is: {W_X_y}")
 
                 # Calculate updated weights for coreset elements
                 W_X_y = self.minimize_l_sub(D_x_y[y], D_y_y[y], D_w_y[y], X_y, Y_y, W_X_y, model)
-                print(f"W_X_y after minimize is {W_X_y}")
+                # print(f"W_X_y after minimize is {W_X_y}")
 
                 X_y_w_updated = X_y_w.clone().to(DEVICE)
-                X_y_w_updated[torch.tensor(e_indices).to(DEVICE)] = W_X_y.to(DEVICE)
+                X_y_w_updated[e.to(DEVICE)] = W_X_y[-1].to(DEVICE)
+                # X_y_w_updated[torch.tensor(e_indices).to(DEVICE)] = W_X_y.to(DEVICE)
                 # X_y_w[torch.tensor(e_indices)] = W_X_y
 
-                # print(f"Are X_y_w and X_y_w_updated equal? {torch.eq(X_y_w, X_y_w_updated)}")
+                # print(f"X_y_w is now: {X_y_w_updated}")
 
                 # Update residuals
                 r = self.grad_l_sub(D_x_y[y], D_y_y[y], D_w_y[y], D_x_y[y], D_y_y[y], X_y_w_updated, model)
-                print(f"residuals is {r[0:10]}")
+                print(f"residuals is {r}")
 
-            print(102)
             # Update the overall subset and weights
             memory_x = torch.cat((memory_x, X_y.cpu().detach()))
             memory_y = torch.cat((memory_y, Y_y.cpu().detach()))
-            memory_weights = torch.cat((memory_weights, W_X_y.cpu().detach()))
+            memory_weights = torch.cat((memory_weights, X_y_w_updated.cpu().detach()))
 
         # Update the memory set with the selected subset and weights
-        print("101")
         self.tasks[self.task_index].memory_x = memory_x
         self.tasks[self.task_index].memory_y = memory_y.long()
         self.tasks[self.task_index].memory_set_weights = memory_weights
@@ -479,7 +473,7 @@ class ContinualLearningManager(ABC):
         # Compute gradients for D batch
         inputs_D = self.l_rep(D_x, D_y, W_D, model)
         grads_D = torch.autograd.grad(inputs_D.sum(), model.parameters(), create_graph=True)
-        grads_D = torch.cat([g.view(-1) for g in grads_D if g is not None]).sum(0)
+        grads_D = torch.cat([g.view(-1) for g in grads_D if g is not None]).sum(0) # flattens the tensor
 
         # Compute gradients for X batch
         if X_y.numel() > 0:
@@ -491,87 +485,66 @@ class ContinualLearningManager(ABC):
 
         # Compute the norm of the gradient difference squared
         norm_loss = (grads_D - grads_X).norm()**2
+
+        # print(f"grads_D is: {grads_D}")
+        # print(f"grads_X is: {grads_X}")
+        print(f"total loss is: {norm_loss}")
         return norm_loss
-
-    
-    def l_sub(self, D_x, D_y, W_D, X_y, Y_y, W_X_y, model):  
-        D_loss = self.compute_total_gradients(self.l_rep(D_x, D_y, W_D, model), model) 
-
-        if X_y.numel() == 0:
-            # X_loss = torch.tensor(0., device=W_X_y.device, requires_grad=True)  # Make it a tensor with requires_grad
-            X_loss = 0.
-        else:
-            X_loss = self.compute_total_gradients(self.l_rep(X_y, Y_y, W_X_y, model), model)
-
-        # Compute the norm of the difference between gradient vectors
-
-        gradient_diff = D_loss - X_loss
-        norm_of_difference = (gradient_diff.norm())**2
-
-        # Add the regularization term
-        regularization = 0.1 * (W_X_y.norm()**2)
-
-        # Final l_sub computation
-        loss_sub = norm_of_difference
-        return loss_sub
 
 
     def grad_l_sub(self, D_x, D_y, W_D, X_y, Y_y, W_X_y, model):
-
-        # print(f"{D_x.shape}, {D_y.shape}, {W_D.shape}")
-        # print(f"requires grad {self.l_sub(D_x, D_y, W_D, X_y, Y_y, W_X_y, model).requires_grad}")
-        # print(f"Wxy {W_X_y.requires_grad}")
-        residuals = torch.autograd.grad(self.l_sub(D_x, D_y, W_D, X_y, Y_y, W_X_y, model), W_X_y, create_graph=True)
+        loss = self.l_sub2(D_x, D_y, W_D, X_y, Y_y, W_X_y, model)
+        residuals = torch.autograd.grad(loss, W_X_y, create_graph=True)
         # print(f"residuals in grad_l_sub is: {residuals}")
         return residuals[0]
 
-    
-    def minimize_l_sub(self, D_x, D_y, W_D, X_y, Y_y, W_X_y, model):
-        # W_X_y = torch.ones(len(X_y), device=DEVICE, requires_grad=True)
-
-        new_one = torch.tensor([1.], device=DEVICE, requires_grad=True)
-        W_X_y = torch.cat((W_X_y, new_one))
-        W_X_y.requires_grad_(True)
-
-        W_X_y = W_X_y.detach().requires_grad_(True)
-
-        # W_X_y = torch.tensor(W_X_y, device=DEVICE, requires_grad=True)
-
-        optimizer = torch.optim.SGD([W_X_y], lr=0.01)
-
-        for i in range(100):  # Number of optimization steps
-            optimizer.zero_grad()
-            loss = self.l_sub2(D_x, D_y, W_D, X_y, Y_y, W_X_y, model)
-            loss.backward(retain_graph=True)
-            if i % 25 == 0:
-                print(f"grad after loss backward: {W_X_y.grad}")
-            optimizer.step()
-
-        return W_X_y
-
     def minimize_l_sub(self, D_x, D_y, W_D, X_y, Y_y, W_X_y, model):
         # Detach W_X_y from its history and ensure it does not require gradients
-        W_X_y = W_X_y.clone().detach().requires_grad_(False)
+        # W_X_y = W_X_y.clone().detach().requires_grad_(False)
 
         # Create a new element that requires gradients
         new_one = torch.tensor([1.], device=DEVICE, requires_grad=True)
 
         # Concatenate W_X_y with new_one without changing the requires_grad of original W_X_y parts
         W_X_y = torch.cat((W_X_y, new_one))
+        W_X_y = torch.tensor(W_X_y, device=DEVICE, requires_grad=True)
 
         # Only new_one requires gradients
-        optimizer = torch.optim.SGD([new_one], lr=0.01)
+        optimizer = torch.optim.SGD([W_X_y], lr=0.01)
 
         for i in range(100):  # Number of optimization steps
             optimizer.zero_grad()
-            loss = self.l_sub(D_x, D_y, W_D, X_y, Y_y, W_X_y, model)
+            loss = self.l_sub2(D_x, D_y, W_D, X_y, Y_y, W_X_y, model)
             loss.backward(retain_graph=True)  # Gradients are computed for all, but only applied to new_one
-            if i % 25 == 0:
-                print(f"grad after loss backward: {new_one.grad}")
+            # if i % 25 == 0:
+            #     print(f"grad after loss backward: {W_X_y.grad}")
             optimizer.step()
 
         return W_X_y
 
+
+    # def minimize_l_sub2(self, D_x, D_y, W_D, X_y, Y_y, W_X_y, model):
+    #     # W_X_y = torch.ones(len(X_y), device=DEVICE, requires_grad=True)
+
+    #     new_one = torch.tensor([1.], device=DEVICE, requires_grad=True)
+    #     W_X_y = torch.cat((W_X_y, new_one))
+    #     W_X_y.requires_grad_(True)
+
+    #     # W_X_y = W_X_y.detach().requires_grad_(True)
+
+    #     # W_X_y = torch.tensor(W_X_y, device=DEVICE, requires_grad=True)
+
+    #     optimizer = torch.optim.SGD([W_X_y], lr=0.01)
+
+    #     for i in range(100):  # Number of optimization steps
+    #         optimizer.zero_grad()
+    #         loss = self.l_sub2(D_x, D_y, W_D, X_y, Y_y, W_X_y, model)
+    #         loss.backward(retain_graph=True)
+    #         if i % 25 == 0:
+    #             print(f"grad after loss backward: {W_X_y.grad}")
+    #         optimizer.step()
+
+    #     return W_X_y
 
 
 
