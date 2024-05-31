@@ -141,12 +141,19 @@ def main(config: Config):
                             #for grad_loc in ['start', 'end']: # eval grad at both start and end of task
                             # Load model and run evaluation
 
+                            # Skip 'past' gradient processing for the first task
+                            if grad_type == 'past' and task_num == 0:
+                                continue
+
                             if grad_type == 'past':
+                        
                                 post_train_model_load_path = (
                                 #f'{model_load_dir}/{config.memory_selection_method}/1/train/task_{task_num}/{grad_loc}_grad/model.pt'
                                 #f'{model_load_dir}/ideal_model/task_{task_num}/{grad_loc}_grad/model.pt'
                                 
                                 f'{model_load_dir}/ideal_model/train_{ideal_model_index}/task_{task_num-1}/model.pt')
+                                
+
                             elif grad_type == 'present': 
                                 post_train_model_load_path = (
                                 f'{model_load_dir}/ideal_model/train_{ideal_model_index}/task_{task_num}/model.pt')
@@ -184,7 +191,10 @@ def main(config: Config):
                                     use_random_img = config.use_random_img)
                                 
                             # update memory set (if needed)
-                            manager.update_memory_set(model = post_train_model, p = p)
+                            # manager.update_memory_set(model = post_train_model, p = p)
+
+                            if not (grad_type == 'past' and task_num == 0):
+                                manager.update_memory_set(model=post_train_model, p=p)
                             
                         
                         
