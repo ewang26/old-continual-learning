@@ -79,6 +79,7 @@ def main(config: Config):
         num_samples = getattr(config, "num_samples", 0)[p_index]
 
         for sample_num in range(num_samples):
+            print(f"run number is {sample_num}")
             random_seed = int(rng.integers(low=0, high=1e6))
             # memory_set_manager = config.memory_set_manager(
             #     p, random_seed=random_seed
@@ -132,7 +133,7 @@ def main(config: Config):
             final_backward_transfers = []
 
             for task_num in range(num_tasks):
-                
+                print(f"task_num is {task_num}")
                 if model_load_dir is not None:
                     
                     for ideal_model_index in range(config.num_ideal_models):
@@ -140,13 +141,13 @@ def main(config: Config):
                             #for grad_loc in ['start', 'end']: # eval grad at both start and end of task
                             # Load model and run evaluation
 
-                            if grad_type == 'new':
+                            if grad_type == 'past':
                                 post_train_model_load_path = (
                                 #f'{model_load_dir}/{config.memory_selection_method}/1/train/task_{task_num}/{grad_loc}_grad/model.pt'
                                 #f'{model_load_dir}/ideal_model/task_{task_num}/{grad_loc}_grad/model.pt'
                                 
                                 f'{model_load_dir}/ideal_model/train_{ideal_model_index}/task_{task_num-1}/model.pt')
-                            else: 
+                            elif grad_type == 'present': 
                                 post_train_model_load_path = (
                                 f'{model_load_dir}/ideal_model/train_{ideal_model_index}/task_{task_num}/model.pt')
 
