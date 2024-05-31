@@ -414,7 +414,6 @@ class LambdaMemorySetManager(MemorySetManager):
         return memory_x, memory_y.long()
 
 
-
 # Alan Gradient Sample Selection (GSS)
 class GSSMemorySetManager(MemorySetManager):
     def __init__(self, p: float, random_seed: int = 42):
