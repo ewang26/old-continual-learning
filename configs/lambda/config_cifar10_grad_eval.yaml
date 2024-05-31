@@ -15,10 +15,11 @@ num_ideal_models: 10
 
 # for gradient evaluating
 #p_arr: [0.2, 0.5, 1]
-p_arr: [0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1]
-num_samples: [10,10,10,10,10,10,10,10,10,10]
-# p_arr: [0.001, 0.5]
-# num_samples: [2, 2]
+# p_arr: [0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1]
+# num_samples: [10,10,10,10,10,10,10,10,10,10]
+p_arr: [0.5]
+num_samples: [10]
+
 #num_samples: [1, 1, 1, 1, 1, 1, 1, 1, 1]
 
 #p_arr: [0.01]
@@ -37,7 +38,8 @@ learning_manager: cifar10_split
 
 # Training hyperparameters
 lr: 0.001
-batch_size: 256
+#batch_size: 256
+batch_size: 200
 random_seed: 0xC0FFEE
 epochs: 50
 #epochs: 30

@@ -20,13 +20,16 @@ num_ideal_models: 10
 #num_samples: [5,5,5,5,5,5,5,5,5,5]
 #num_samples: [10, 10, 10, 10, 10, 10, 10, 10, 10, 10]
 
-p_arr: [0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1]
-num_samples: [10, 10, 10, 10, 10, 10, 10, 10, 10, 10]
+# p_arr: [0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1]
+# num_samples: [10, 10, 10, 10, 10, 10, 10, 10, 10, 10]
+
+p_arr: [1]
+num_samples: [10]
 
 #p_arr: [0.01]
 #num_samples: [1] 
 
-#debugging 
+#debugging r
 train_debug: False
 
 #training

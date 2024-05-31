@@ -1,0 +1,37 @@
+# WandB stuff, change according to user
+use_wandb: True
+wandb_project_name: transfer_to_continual_learning
+wandb_profile: lukebailey
+
+# Memory set hyperparameters
+memory_set_manager: random
+p: 1
+use_memory_set: False
+
+# Continual learning hyperparameters
+learning_manager: cifar10_split
+
+# Training hyperparameters
+lr: 0.001
+#lr: 0.01
+batch_size: 256
+random_seed: 56
+epochs: 50
+
+# Metric hyperparameters
+# possible options [leep, logme, gcb]
+transfer_metrics: [leep]
+
+#Example CNN
+model: 
+  type: cnn
+  params: 
+    in_channels: 3 
+    out_channels: 10
+    l1_out_channels: 2
+    l2_out_channels: 2
+    l3_out_channels: 4
+    l4_out_channels: 4
+
+model_save_dir: ./models/cifar_10_split/2_2_4_4
+model_load_dir: ./models/cifar_10_split/2_2_4_4
