@@ -377,42 +377,57 @@ class ContinualLearningManager(ABC):
 
             # X_y_w should have length equal to the full task dataset size
             X_y_w = torch.zeros(len(D_x_y[y]), requires_grad=True).to(DEVICE)
+            X_y_w_updated = X_y_w.clone().to(DEVICE)
+
             r = self.grad_l_sub(D_x_y[y], D_y_y[y], D_w_y[y], D_x_y[y], D_y_y[y], X_y_w, model)
-            print(f"First residuals has length {r.size(0)} and is: {r}")
+            # print(f"First residuals has length {r.size(0)} and is: {r}")
+
+            e_indices = []
 
             while len(X_y) <= k_y:  
+                print(f"Residuals before update is: {r}")
                 # print(f"e at start of loop is {e}")
                 # Find the data point with maximum residual
                 # Update per-class subset
-                e = torch.argmin(r)
-                # values, indices = torch.topk(torch.abs(r), X_y.size(0)+1, largest=False)
+                e = torch.argmax(torch.abs(r))
+                values, indices = torch.topk(torch.abs(r), 3)
                 # e = indices[-1]
                 print(f"new e is: {e}")
-                # print(f"Y_y before append is: {Y_y}")
+                e_indices.append(e)
 
                 X_y = torch.cat((X_y, D_x_y[y][e].unsqueeze(0)))
+                # print(f"D_y_y[y][e] is: {D_y_y[y][e]}")
                 Y_y = torch.cat((Y_y, D_y_y[y][e].unsqueeze(0)))
 
-                # print(f"Y_y after append is: {Y_y}")
-                # print(f"W_X_y before minimize is: {W_X_y}")
+
+                # print(f"before minimize l_sub is: {self.l_sub2(D_x_y[y], D_y_y[y], D_w_y[y], X_y, Y_y, W_X_y, model)}")
 
                 # Calculate updated weights for coreset elements
                 W_X_y = self.minimize_l_sub(D_x_y[y], D_y_y[y], D_w_y[y], X_y, Y_y, W_X_y, model)
 
+                print(f"minimized l_sub is: {self.l_sub2(D_x_y[y], D_y_y[y], D_w_y[y], X_y, Y_y, W_X_y, model)}")
                 print(f"W_X_y after minimize is {W_X_y}")
 
-                X_y_w_updated = X_y_w.clone().to(DEVICE)
-                X_y_w_updated[e.to(DEVICE)] = W_X_y[-1].to(DEVICE)
+                # X_y_w_updated = X_y_w.clone().to(DEVICE)
+                # X_y_w_updated[e.to(DEVICE)] = W_X_y[-1].to(DEVICE)
 
-                print(f"X_y_w_updated is {X_y_w_updated}")
-                # X_y_w_updated[torch.tensor(e_indices).to(DEVICE)] = W_X_y.to(DEVICE)
-                # X_y_w[torch.tensor(e_indices)] = W_X_y
+                # print(f"X_y_w_updated is {X_y_w_updated}")
+                X_y_w_updated[torch.tensor(e_indices).to(DEVICE)] = W_X_y.to(DEVICE)
+                print(f"and l_sub on full data is: {self.l_sub2(D_x_y[y], D_y_y[y], D_w_y[y], D_x_y[y], D_y_y[y], X_y_w_updated, model)}")
+                print(f"e list is: {e_indices}")
+                print(f"nonzero indices is: {torch.nonzero(X_y_w_updated)}")
 
-                # print(f"X_y_w is now: {X_y_w_updated}")
+                print(f"X_y_w is now: {X_y_w_updated}")
+                print(f"r at {e} before residual update is: {r[e]}")
+                print(f"top 3 residuals is: {values}")
 
                 # Update residuals
                 r = self.grad_l_sub(D_x_y[y], D_y_y[y], D_w_y[y], D_x_y[y], D_y_y[y], X_y_w_updated, model)
-                print(f"residuals is {r}")
+                print(f"r at element {e} is {r[e]}")
+                values, indices = torch.topk(torch.abs(r), 3)
+
+                print(f"top 3 residuals after r update is: {values}")
+                print(f"Residuals at end of loop is {r}")
 
             # Update the overall subset and weights
             memory_x = torch.cat((memory_x, X_y.cpu().detach()))
@@ -429,19 +444,7 @@ class ContinualLearningManager(ABC):
         y = y.to(DEVICE)
         w = w.to(DEVICE)
 
-        # print(f"params before are {w}, {model(x)}, {y.long()}")
-
-        # print(f"model(x) is {model(x).shape}, y.long is {y.long().shape}")
-        # print(f"softmax(model(x)) is {model(x)[0]}")
-        # print(f"w is {w}, celoss is {nn.CrossEntropyLoss()(model(x), y.long())}")
-        
-        # print("Gradient check for w:", w.grad)
-        # print("Does w require gradients?:", w.requires_grad)
-        # print(f"cross entropy output: {nn.CrossEntropyLoss()(model(x), y.long())}")
-        # print(f"weights are: {w}")
-        # print(f"ce loss: {ce_loss}")
-
-        return self.memory_set_manager.beta * w * nn.CrossEntropyLoss()(model(x), y.long())
+        # return self.memory_set_manager.beta * w * nn.CrossEntropyLoss()(model(x), y.long())
 
         ce_loss = nn.CrossEntropyLoss(reduction='none')(model(x), y.long())
         weighted_loss = self.memory_set_manager.beta * w * ce_loss
@@ -469,47 +472,47 @@ class ContinualLearningManager(ABC):
 
         return total_gradient
 
-    def unpack_list(self, grads):
-        transposed_grads = zip(*grads)
+    # def unpack_list(self, grads):
+    #     transposed_grads = zip(*grads)
 
-        # Sum the tensors at each position
-        summed_tensors = tuple(torch.sum(torch.stack(tensors), dim=0) for tensors in transposed_grads)
-        flattened_tensor = torch.cat([t.flatten() for t in summed_tensors])
+    #     # Sum the tensors at each position
+    #     summed_tensors = tuple(torch.sum(torch.stack(tensors), dim=0) for tensors in transposed_grads)
+    #     flattened_tensor = torch.cat([t.flatten() for t in summed_tensors])
 
-        return flattened_tensor
+    #     return flattened_tensor
 
     def l_sub2(self, D_x, D_y, W_D, X_y, Y_y, W_X_y, model):
 
         # Compute gradients for D batch
         inputs_D = self.l_rep(D_x, D_y, W_D, model)
-        grads_D = torch.autograd.grad(inputs_D.sum(), model.parameters(), create_graph=True)
+        grads_D = torch.autograd.grad(inputs_D, model.parameters(), create_graph=True)
         grads_D = torch.cat([g.view(-1) for g in grads_D if g is not None]).sum(0) # flattens the tensor
 
         # print(f"inputs_X is: {inputs_X}")
 
-        loss_D = 0
-        for i, x in enumerate(D_x):
-            loss_D += self.l_rep(x, D_y[i], W_D[i], model)
+        # loss_D = 0
+        # for i, x in enumerate(D_x):
+        #     loss_D += self.l_rep(x, D_y[i], W_D[i], model)
         
-        # print(f"loss_D: {loss_D}")
-        grads_D2 = torch.autograd.grad(loss_D, model.parameters(), create_graph=True)
-        grads_D2 = torch.cat([g.view(-1) for g in grads_D2 if g is not None]).sum(0)
+        # # print(f"loss_D: {loss_D}")
+        # grads_D2 = torch.autograd.grad(loss_D, model.parameters(), create_graph=True)
+        # grads_D2 = torch.cat([g.view(-1) for g in grads_D2 if g is not None]).sum(0)
     
         # Compute gradients for X batch
         inputs_X = self.l_rep(X_y, Y_y, W_X_y, model)
-        grads_X = torch.autograd.grad(inputs_X.sum(), model.parameters(), create_graph=True)
+        grads_X = torch.autograd.grad(inputs_X, model.parameters(), create_graph=True)
         grads_X = torch.cat([g.view(-1) for g in grads_X if g is not None]).sum(0)
         
         
-        loss_X = 0
-        for i, x in enumerate(X_y):
-            loss_X += self.l_rep(x, Y_y[i], W_X_y[i], model)
+        # loss_X = 0
+        # for i, x in enumerate(X_y):
+        #     loss_X += self.l_rep(x, Y_y[i], W_X_y[i], model)
         
-        grads_X2 = torch.autograd.grad(loss_X, model.parameters(), create_graph=True)
-        grads_X2 = torch.cat([g.view(-1) for g in grads_X2 if g is not None]).sum(0)
+        # grads_X2 = torch.autograd.grad(loss_X, model.parameters(), create_graph=True)
+        # grads_X2 = torch.cat([g.view(-1) for g in grads_X2 if g is not None]).sum(0)
 
         # Compute the norm of the gradient difference squared
-        norm_loss = (grads_D2 - grads_X2).norm()**2
+        norm_loss = (grads_D - grads_X).norm()**2
 
         # regularization_term = 0.1 * grads_X.norm()
 
@@ -521,7 +524,7 @@ class ContinualLearningManager(ABC):
 
         indices = torch.arange(W_X_y.size(0)).to(DEVICE)
         # debug_loss = grads_D - torch.sum(indices * W_X_y)
-        debug_loss = torch.sum(indices * W_X_y)
+        # debug_loss = torch.sum(indices * W_X_y)
         # print(f"grads_X placeholder is {torch.sum(indices * W_X_y)}")
 
         return norm_loss
@@ -557,8 +560,8 @@ class ContinualLearningManager(ABC):
             optimizer.zero_grad()
             loss = self.l_sub2(D_x, D_y, W_D, X_y, Y_y, W_X_y, model)
             loss.backward(retain_graph=True)  
-            
-            print(f"grad after loss backward: {W_X_y.grad}")
+            if i % 25 == 0:
+                print(f"grad after loss backward: {W_X_y.grad}")
             optimizer.step()
 
         return W_X_y
