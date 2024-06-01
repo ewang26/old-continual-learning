@@ -512,9 +512,9 @@ class ClassBalancedReservoirSampling:
 # Hyper Parameters
 # num_epochs = 50
 
-num_epochs = 50
+num_epochs = 2
 batch_size = 100
-learning_rate = 0.002
+learning_rate = 0.001
 
 class iCaRLNet(nn.Module):
     def __init__(self, feature_size, n_classes):
@@ -527,6 +527,7 @@ class iCaRLNet(nn.Module):
         self.fc = nn.Linear(feature_size, n_classes, bias=False)
 
         self.grayscale_to_rgb = transforms.Compose([transforms.Lambda(lambda x: torch.cat([x, x, x], dim=1))])
+        # self.grayscale_to_rgb = transforms.Grayscale(num_output_channels=3)
 
 
         self.n_classes = n_classes
@@ -605,17 +606,22 @@ class iCaRLNet(nn.Module):
         with torch.no_grad():  # Ensures no gradients are calculated
             # for i, img in enumerate(images):
             for img in images:
+
+                mnist_grayscale_transform = transforms.Compose([transforms.Lambda(lambda x: torch.cat([x, x, x], dim=0))])
                 
+                print(f"img before in mnist is: {img.shape}")
                 # print(f"before checking image dim: {img.shape}")
-                if img.dim() == 3:  # Check if the channel dimension is missing
+                if img.dim() == 3:  # Check if the channel dimension is missing for CIFAR?
                     img = img.unsqueeze(0)  # Add a batch dimension if it's a single image
                 img = img.to(DEVICE)
                 
                 if img.dim() == 1: # If it's mnist, it is just 784 flattened
-                    img = img.view(1, 28, 28) # add the color channel and reshape
-                    img = self.grayscale_to_rgb(img)
+                    img = img.view(-1, 28, 28) # add the color channel and reshape
+                    print(f"img after first reshape: {img.shape}")
+                    img = mnist_grayscale_transform(img)
 
                 # print(f"img dimension is: {img.shape}")
+                print(f"img has shape: {img.shape}")
                 img = transform(img)  # Apply transformation
 
                 # Extract features
@@ -788,7 +794,7 @@ class iCaRL(MemorySetManager):
     def create_memory_set(self, x, y):
         """ Create or update memory set for new tasks """
         print(f"x.shape of incoming task data is {x.shape}, y.shape is {y.shape}")
-
+ 
         transform_test = transforms.Compose([
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
