@@ -617,7 +617,7 @@ class ClassBalancedReservoirSampling:
 # Hyper Parameters
 # num_epochs = 50
 
-num_epochs = 1
+num_epochs = 50
 batch_size = 64
 learning_rate = 0.002
 
@@ -821,10 +821,6 @@ class iCaRLNet(nn.Module):
                 all_xs = torch.cat([exemplar_xs.reshape(num_images, 784), x], dim=0)
                 all_ys = torch.cat([exemplar_ys.reshape(num_labels), y], dim=0)
 
-            # all_xs = torch.cat([exemplar_xs, x], dim=0) # I think it should actually be this?
-            # all_ys = torch.cat([exemplar_ys, y], dim=0)
-
-        print(f"all x data (including exemplars) after concatenation has shape {all_xs.shape}")
 
         combined_dataset = torch.utils.data.TensorDataset(all_xs, all_ys)
         loader = torch.utils.data.DataLoader(combined_dataset, batch_size=batch_size, shuffle=True)
@@ -834,7 +830,6 @@ class iCaRLNet(nn.Module):
         with torch.no_grad():
             for idx, (images, labels) in enumerate(loader):
 
-                print(f"before transform shape is {images.shape} and dim is {images.dim()}")
                 if images.dim() == 2:
                     # x = x.unsqueeze(1) 
                     # x = x.unsqueeze(0).unsqueeze(0)  # add batch dimension and channel dimension, now (1, 1, height, width)
@@ -843,7 +838,6 @@ class iCaRLNet(nn.Module):
 
                 # if images.size(1) == 1:
                 #     images = self.grayscale_to_rgb(images)
-                print(f"after transform: {images.shape}")
                 g = torch.sigmoid(self.forward(images))
 
                 start_index = idx * loader.batch_size
