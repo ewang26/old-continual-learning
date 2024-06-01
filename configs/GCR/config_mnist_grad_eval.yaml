@@ -7,7 +7,7 @@ wandb_profile: alanhsu
 # Memory set hyperparameters
 memory_set_manager: GCR
 use_memory_set: True
-grad_type: ['past'] # can do 'past' or 'present'
+grad_type: ['present'] # can do 'past' or 'present'
 p: dummar_var
 use_random_img: False
 num_ideal_models: 1
@@ -19,7 +19,7 @@ num_ideal_models: 1
 #num_samples: [1, 1, 1, 1, 1, 1, 1, 1, 1]
 
 p_arr: [0.001, 0.002]
-num_samples: [2, 2] 
+num_samples: [1, 1, 1] 
 
 #debugging 
 train_debug: False
@@ -61,4 +61,4 @@ model:
 #model_save_dir: models/mnist_split #/1/
 #model_save_dir: models/cifar10_split
 model_load_dir: models/mnist_split
-#model_load_dir: models/cifar10_split
+# model_load_dir: models/cifar10_split
