@@ -372,6 +372,9 @@ class ContinualLearningManager(ABC):
             if len(batch_x.shape) == 2:
                 X_y = torch.empty((0, batch_x.size(1)), requires_grad=True)
                 Y_y = torch.empty((0,), requires_grad=True)
+
+            X_y_debug = X_y
+            Y_y_debug = Y_y
             
             W_X_y = torch.empty((0,), requires_grad=True).to(DEVICE)
 
@@ -405,21 +408,25 @@ class ContinualLearningManager(ABC):
                 # Calculate updated weights for coreset elements
                 W_X_y = self.minimize_l_sub(D_x_y[y], D_y_y[y], D_w_y[y], X_y, Y_y, W_X_y, model)
 
+                l_sub_mem = self.l_sub2(D_x_y[y], D_y_y[y], D_w_y[y], X_y, Y_y, W_X_y, model)
                 print(f"minimized l_sub is: {self.l_sub2(D_x_y[y], D_y_y[y], D_w_y[y], X_y, Y_y, W_X_y, model)}")
                 print(f"W_X_y after minimize is {W_X_y}")
+                print(f"e_indices is: {e_indices}. corresponds to W_X_y\n")
 
                 # X_y_w_updated = X_y_w.clone().to(DEVICE)
                 # X_y_w_updated[e.to(DEVICE)] = W_X_y[-1].to(DEVICE)
 
                 # print(f"X_y_w_updated is {X_y_w_updated}")
                 X_y_w_updated[torch.tensor(e_indices).to(DEVICE)] = W_X_y.to(DEVICE)
+                print(f"number of non-zero weights in X_y_w_updated: {torch.nonzero(X_y_w_updated)}")
+                l_sub_full = self.l_sub2(D_x_y[y], D_y_y[y], D_w_y[y], D_x_y[y], D_y_y[y], X_y_w_updated, model)
                 print(f"and l_sub on full data is: {self.l_sub2(D_x_y[y], D_y_y[y], D_w_y[y], D_x_y[y], D_y_y[y], X_y_w_updated, model)}")
                 print(f"e list is: {e_indices}")
                 print(f"nonzero indices is: {torch.nonzero(X_y_w_updated)}")
 
                 print(f"X_y_w is now: {X_y_w_updated}")
                 print(f"r at {e} before residual update is: {r[e]}")
-                print(f"top 3 residuals is: {values}")
+                # print(f"top 3 residuals is: {values}")
 
                 # Update residuals
                 r = self.grad_l_sub(D_x_y[y], D_y_y[y], D_w_y[y], D_x_y[y], D_y_y[y], X_y_w_updated, model)
@@ -538,33 +545,33 @@ class ContinualLearningManager(ABC):
         # print(f"residuals in grad_l_sub is: {residuals}")
         return residuals[0]
 
-    def minimize_l_sub(self, D_x, D_y, W_D, X_y, Y_y, W_X_y, model):
+    def minimize_l_sub(self, D_x, D_y, W_D, X_y, Y_y, X_y_w, model):
         # Detach W_X_y from its history and ensure it does not require gradients
         # W_X_y = W_X_y.clone().detach().requires_grad_(False)
 
         # Create a new element that requires gradients
-        new_one = torch.tensor([1.], device=DEVICE, requires_grad=True)
+        new_one = torch.tensor([1.], device=DEVICE)
 
-        print(f"W_X_y before cat: {W_X_y}")
+        print(f"X_y_w before cat: {X_y_w}")
 
         # Concatenate W_X_y with new_one without changing the requires_grad of original W_X_y parts
-        W_X_y = torch.cat((W_X_y, new_one))
+        X_y_w = torch.cat((X_y_w, new_one))
         # W_X_y = torch.tensor(W_X_y, device=DEVICE, requires_grad=True)
-        W_X_y = W_X_y.clone().detach().requires_grad_(True)
+        X_y_w = X_y_w.clone().detach().requires_grad_(True)
 
-        print(f"W_X_y after cat: {W_X_y}")
+        print(f"X_y_w after cat: {X_y_w}")
 
         optimizer = torch.optim.SGD([W_X_y], lr=0.0001)
 
         for i in range(75):  # Number of optimization steps
             optimizer.zero_grad()
-            loss = self.l_sub2(D_x, D_y, W_D, X_y, Y_y, W_X_y, model)
+            loss = self.l_sub2(D_x, D_y, W_D, X_y, Y_y, X_y_w, model)
             loss.backward(retain_graph=True)  
-            if i % 25 == 0:
-                print(f"grad after loss backward: {W_X_y.grad}")
+            if i % 5 == 0:
+                print(f"grad after loss backward: {X_y_w.grad}")
             optimizer.step()
 
-        return W_X_y
+        return X_y_w
 
 
     # def minimize_l_sub2(self, D_x, D_y, W_D, X_y, Y_y, W_X_y, model):
