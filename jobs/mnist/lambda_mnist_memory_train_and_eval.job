@@ -45,10 +45,10 @@ source "${VENV_PATH}/bin/activate"
 
 # # Run lambda training and evaluation
 # python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/lambda/config_mnist_grad_eval.yaml
-# python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/lambda/config_mnist_train.yaml
+python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/lambda/config_mnist_train.yaml
 
 
 
 # # # Run additional script for saving similarity blocks
-python ${MAIN_PATH}/save_similarity_block_v2.py --config ${MAIN_PATH}/configs/grad_eval/mnist_lambda.yaml
+# python ${MAIN_PATH}/save_similarity_block_v2.py --config ${MAIN_PATH}/configs/grad_eval/mnist_lambda.yaml
 deactivate
