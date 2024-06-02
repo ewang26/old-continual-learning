@@ -7,7 +7,7 @@ wandb_profile: alanhsu
 # Memory set hyperparameters
 memory_set_manager: random
 use_memory_set: True
-p: 0.1
+# p: 0.1
 #num_samples: 10
 
 # for gradient evaluating
