@@ -351,67 +351,67 @@ class KMeansMemorySetManager(MemorySetManager):
 #         return memory_x_concat, memory_y_concat
 
 
-# Jonathan Lambda Method
-class LambdaMemorySetManager(MemorySetManager):
-    def __init__(self, p: float, random_seed: int = 42):
-        """
-        Args:
-            p: The probability of an element being in the memory set.
-        """
-        self.p = p
+# # Jonathan Lambda Method
+# class LambdaMemorySetManager(MemorySetManager):
+#     def __init__(self, p: float, random_seed: int = 42):
+#         """
+#         Args:
+#             p: The probability of an element being in the memory set.
+#         """
+#         self.p = p
 
-    def create_memory_set(self, x: Float[Tensor, "n f"], y: Float[Tensor, "n 1"]):
-        # initializing memory sets as empty for initial task (which uses all the data)
-        # self.memory_set_size = int(x.shape[0] * self.p)
-        #return torch.empty(0), torch.empty(0)
-        return torch.empty(0, device=DEVICE), torch.empty(0, device=DEVICE)
+#     def create_memory_set(self, x: Float[Tensor, "n f"], y: Float[Tensor, "n 1"]):
+#         # initializing memory sets as empty for initial task (which uses all the data)
+#         # self.memory_set_size = int(x.shape[0] * self.p)
+#         #return torch.empty(0), torch.empty(0)
+#         return torch.empty(0, device=DEVICE), torch.empty(0, device=DEVICE)
 
 
-    def update_memory_lambda(self, memory_x,  memory_y, sample_x, sample_y, outputs):
-        """
-        Function to update the memory buffer in Lambda Memory Selection.
+#     def update_memory_lambda(self, memory_x,  memory_y, sample_x, sample_y, outputs):
+#         """
+#         Function to update the memory buffer in Lambda Memory Selection.
 
-        Args:
-            memory_x and memory_y: the existing memory datasets.
-            sample_x and sample_y: the full data from the terminal task.
-            outputs: tensor of size [n x k] where n is number of samples in sample_x or sample_y, and k is number of classes to classify into.
-                Outputs of forward pass through the network of all data in sample_x.
+#         Args:
+#             memory_x and memory_y: the existing memory datasets.
+#             sample_x and sample_y: the full data from the terminal task.
+#             outputs: tensor of size [n x k] where n is number of samples in sample_x or sample_y, and k is number of classes to classify into.
+#                 Outputs of forward pass through the network of all data in sample_x.
         
-        Returns:
-            memory_x and memory_y.long(): new memory datasets including the memory dataset for the existing task.
-        """
-        terminal_task_size = outputs.shape[0]
-        trace_list = []
-        for i in range(terminal_task_size):
-            # take output layer and apply softmax to get probabilities of classification for each output
-            class_p = torch.softmax(outputs[i], dim=0)
+#         Returns:
+#             memory_x and memory_y.long(): new memory datasets including the memory dataset for the existing task.
+#         """
+#         terminal_task_size = outputs.shape[0]
+#         trace_list = []
+#         for i in range(terminal_task_size):
+#             # take output layer and apply softmax to get probabilities of classification for each output
+#             class_p = torch.softmax(outputs[i], dim=0)
 
-            # create a matrix of p @ (1-p).T to represent decision uncertainty at each class
-            #decision_uncertainty = torch.ger(class_p, (1 - class_p).T)
-            decision_uncertainty = torch.ger(class_p, (1 - class_p))
+#             # create a matrix of p @ (1-p).T to represent decision uncertainty at each class
+#             #decision_uncertainty = torch.ger(class_p, (1 - class_p).T)
+#             decision_uncertainty = torch.ger(class_p, (1 - class_p))
 
-            # calculate the trace of this matrix to assess the uncertainty in classification across multiple classes
-            # the trace equivalent to the hessian of the loss wrt the output layer
-            decision_trace = torch.trace(decision_uncertainty)
-            # print(decision_trace)
-            trace_list.append(decision_trace.item())
-        print(trace_list[:10])
-        # calculate size of memory set to create 
-        #note: this does class balancing if data in the tasks are already balanced
-            # more work must be done to create constant memory size for each class regardless of initial class distribution in task space
-        memory_size = int(terminal_task_size*self.p)
+#             # calculate the trace of this matrix to assess the uncertainty in classification across multiple classes
+#             # the trace equivalent to the hessian of the loss wrt the output layer
+#             decision_trace = torch.trace(decision_uncertainty)
+#             # print(decision_trace)
+#             trace_list.append(decision_trace.item())
+#         print(trace_list[:10])
+#         # calculate size of memory set to create 
+#         #note: this does class balancing if data in the tasks are already balanced
+#             # more work must be done to create constant memory size for each class regardless of initial class distribution in task space
+#         memory_size = int(terminal_task_size*self.p)
 
-        # getting indexes of the highest trace 
-        argsorted_indx = sorted(range(len(trace_list)), key=lambda x: trace_list[x], reverse=True)
-        desired_indx = argsorted_indx[:memory_size]
-        # print(sample_x[desired_indx][:5])
-        idx = desired_indx[0]
-        # print(sample_x[0])
+#         # getting indexes of the highest trace 
+#         argsorted_indx = sorted(range(len(trace_list)), key=lambda x: trace_list[x], reverse=True)
+#         desired_indx = argsorted_indx[:memory_size]
+#         # print(sample_x[desired_indx][:5])
+#         idx = desired_indx[0]
+#         # print(sample_x[0])
 
-        # finding the memory set of terminal task and concatenating it to the existing memory set
-        memory_x = torch.cat((memory_x, sample_x[desired_indx].to(DEVICE)))
-        memory_y = torch.cat((memory_y, sample_y[desired_indx].to(DEVICE)))
-        return memory_x, memory_y.long()
+#         # finding the memory set of terminal task and concatenating it to the existing memory set
+#         memory_x = torch.cat((memory_x, sample_x[desired_indx].to(DEVICE)))
+#         memory_y = torch.cat((memory_y, sample_y[desired_indx].to(DEVICE)))
+#         return memory_x, memory_y.long()
 
 
 # Alan Gradient Sample Selection (GSS)
@@ -452,6 +452,7 @@ class GSSMemorySetManager(MemorySetManager):
         # memory_y = y[memory_set_indices]
 
         # return memory_x, memory_y
+        #return torch.empty(0, device=DEVICE), torch.empty(0, device=DEVICE)
         return torch.empty(0), torch.empty(0)
     
     def update_GSS_greedy(self, memory_x, memory_y, C_arr, sample_x, sample_y, grad_sample, grad_batch):
@@ -502,28 +503,7 @@ class GSSMemorySetManager(MemorySetManager):
         #     input()
         
         return memory_x, memory_y.long(), C_arr
-
-    def create_memory_set(self, x: torch.Tensor, y: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
-        """
-        Creates the memory set using class-balanced reservoir sampling.
-        Args:
-            x: Input features as a tensor.
-            y: Corresponding labels as a tensor.
-        Returns:
-            A tuple containing tensors for the memory set's features and labels.
-        """
-        self.memory_set_size = int(x.shape[0] * self.p)
-        # reset memory and counts
-        self.memory_x = x.new_empty((0, *x.shape[1:]))
-        self.memory_y = y.new_empty((0,), dtype=torch.long)
-        self.class_counts_in_memory = {}
-        self.stream_class_counts = {}
-        self.full_classes = set()
-
-        for i in range(x.shape[0]):
-            self.update_memory_set(x[i], y[i])
-
-        return self.memory_x, self.memory_y        
+   
 
 class ClassBalancedReservoirSampling:
     def __init__(self, p: float, random_seed: int = 42):
@@ -915,3 +895,66 @@ class iCaRL(MemorySetManager):
         # return self.net.exemplar_sets[-1], self.net.exemplar_labels[-1] # should return the last image set in the memory set
         # does I need to return a tensor?
         ## and their corresponding labels
+
+
+#lambda debug
+class LambdaMemorySetManager(MemorySetManager):
+    def __init__(self, p: float, random_seed: int = 42):
+        """
+        Args:
+            p: The probability of an element being in the memory set.
+        """
+        self.p = p
+
+    def create_memory_set(self, x: Float[Tensor, "n f"], y: Float[Tensor, "n 1"]):
+        # initializing memory sets as empty for initial task (which uses all the data)
+        # self.memory_set_size = int(x.shape[0] * self.p)
+        #return torch.empty(0), torch.empty(0)
+        return torch.empty(0, device=DEVICE), torch.empty(0, device=DEVICE)
+
+
+    def update_memory_lambda(self, memory_x,  memory_y, sample_x, sample_y, outputs):
+        """
+        Function to update the memory buffer in Lambda Memory Selection.
+
+        Args:
+            memory_x and memory_y: the existing memory datasets.
+            sample_x and sample_y: the full data from the terminal task.
+            outputs: tensor of size [n x k] where n is number of samples in sample_x or sample_y, and k is number of classes to classify into.
+                Outputs of forward pass through the network of all data in sample_x.
+        
+        Returns:
+            memory_x and memory_y.long(): new memory datasets including the memory dataset for the existing task.
+        """
+        terminal_task_size = outputs.shape[0]
+        trace_list = []
+        for i in range(terminal_task_size):
+            # take output layer and apply softmax to get probabilities of classification for each output
+            class_p = torch.softmax(outputs[i], dim=0)
+
+            # create a matrix of p @ (1-p).T to represent decision uncertainty at each class
+            #decision_uncertainty = torch.ger(class_p, (1 - class_p).T)
+            decision_uncertainty = torch.ger(class_p, (1 - class_p))
+
+            # calculate the trace of this matrix to assess the uncertainty in classification across multiple classes
+            # the trace equivalent to the hessian of the loss wrt the output layer
+            decision_trace = torch.trace(decision_uncertainty)
+            # print(decision_trace)
+            trace_list.append(decision_trace.item())
+        print(trace_list[:10])
+        # calculate size of memory set to create 
+        #note: this does class balancing if data in the tasks are already balanced
+            # more work must be done to create constant memory size for each class regardless of initial class distribution in task space
+        memory_size = int(terminal_task_size*self.p)
+
+        # getting indexes of the highest trace 
+        argsorted_indx = sorted(range(len(trace_list)), key=lambda x: trace_list[x], reverse=True)
+        desired_indx = argsorted_indx[:memory_size]
+        # print(sample_x[desired_indx][:5])
+        idx = desired_indx[0]
+        # print(sample_x[0])
+
+        # finding the memory set of terminal task and concatenating it to the existing memory set
+        memory_x = torch.cat((memory_x, sample_x[desired_indx].to(DEVICE)))
+        memory_y = torch.cat((memory_y, sample_y[desired_indx].to(DEVICE)))
+        return memory_x, memory_y.long()
