@@ -50,5 +50,5 @@ python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/lambda/config_ci
 
 
 # # # Run additional script for saving similarity blocks
-python ${MAIN_PATH}/save_similarity_block_v2.py --config ${MAIN_PATH}/configs/grad_eval/cifar10_lambda.yaml
+# python ${MAIN_PATH}/save_similarity_block_v2.py --config ${MAIN_PATH}/configs/grad_eval/cifar10_lambda.yaml
 deactivate
