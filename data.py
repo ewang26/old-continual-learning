@@ -960,7 +960,7 @@ class LambdaMemorySetManager(MemorySetManager):
         return memory_x, memory_y.long()
 
 
-num_epochs = 50
+num_epochs = 30
 batch_size = 64
 learning_rate = 0.002
 
