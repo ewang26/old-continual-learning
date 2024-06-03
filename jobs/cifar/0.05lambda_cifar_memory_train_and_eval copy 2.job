@@ -1,10 +1,10 @@
 #!/bin/bash
 #SBATCH -n 1
 #SBATCH -N 1
-#SBATCH -p gpu
+#SBATCH -p shared
 #SBATCH -t 0-10:00
 #SBATCH --mem=10000
-#SBATCH --gres=gpu:1
+#SBATCH --gres=cpu:1
 #SBATCH --job-name=continual_learning
 #SBATCH -o logs/train_eval_%j.out
 #SBATCH -e logs/train_eval_%j.err
