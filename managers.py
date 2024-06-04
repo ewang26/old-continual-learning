@@ -17,6 +17,7 @@ import wandb
 from matplotlib import pyplot as plt
 from torch.nn.utils import clip_grad_norm_
 import os
+from sklearn.linear_model import OrthogonalMatchingPursuit
 
 from data import MemorySetManager
 from models import MLP, MNLIST_MLP_ARCH, CifarNet, CIFAR10_ARCH, CIFAR100_ARCH
@@ -381,25 +382,33 @@ class ContinualLearningManager(ABC):
                 X_y = torch.cat((X_y, D_x_y[y][e].unsqueeze(0)))
                 Y_y = torch.cat((Y_y, D_y_y[y][e].unsqueeze(0)))
 
-                one_tensor = torch.tensor([1.0], requires_grad=False).to(DEVICE)
-                W_X_y = torch.cat((W_X_y, one_tensor))
-                W_X_y_leaf = W_X_y.clone().detach().requires_grad_(True)
+                W_X_y = self.minimize_l_sub_OMP(D_x_y[y], D_y_y[y], X_y, Y_y, model)
 
-                # Calculate updated weights for coreset elements
-                W_X_y_leaf = self.minimize_l_sub(D_x_y[y], D_y_y[y], D_w_y[y], X_y, Y_y, W_X_y_leaf, model)
-                W_X_y = W_X_y_leaf.detach()
+                # Below is optimizing W_X_y
+                # one_tensor = torch.tensor([1.0], requires_grad=False).to(DEVICE)
+                # W_X_y = torch.cat((W_X_y, one_tensor))
+                # W_X_y_leaf = W_X_y.clone().detach().requires_grad_(True)
+
+                # # Calculate updated weights for coreset elements
+                # W_X_y_leaf = self.minimize_l_sub(D_x_y[y], D_y_y[y], D_w_y[y], X_y, Y_y, W_X_y_leaf, model)
+                # W_X_y = W_X_y_leaf.detach()
+                # print(f"Memory data loss: {self.l_sub(D_x_y[y], D_y_y[y], D_w_y[y], X_y, Y_y, W_X_y, model)}")
+                
+                
                 # Update full weights with new learned weights 
-                X_y_w_updated[torch.tensor(e_indices).to(DEVICE)] = W_X_y.to(DEVICE)
-                # X_y_w_updated = self.update_weights(X_y_w_updated, W_X_y, e_indices, DEVICE)
+                X_y_w_updated[torch.tensor(e_indices).to(DEVICE)] = torch.from_numpy(W_X_y).to(DEVICE)
+                # print(f"W_X_y is: {W_X_y} and len is {W_X_y.shape}")
+                # print(f"Memory data loss: {self.l_sub(D_x_y[y], D_y_y[y], D_w_y[y], X_y, Y_y, torch.from_numpy(W_X_y), model)}")
+                # print(f"Total data loss: {self.l_sub(D_x_y[y], D_y_y[y], D_w_y[y], D_x_y[y], D_y_y[y], X_y_w_updated, model)}")
 
                 # Update residuals
                 r = self.grad_l_sub(D_x_y[y], D_y_y[y], D_w_y[y], D_x_y[y], D_y_y[y], X_y_w_updated, model)
-                print(f"Residuals at bottom: {r}")
+                # print(f"Residuals at bottom: {r}")
 
             # Update the overall subset and weights
             memory_x = torch.cat((memory_x, X_y.cpu().detach()))
             memory_y = torch.cat((memory_y, Y_y.cpu().detach()))
-            memory_weights = torch.cat((memory_weights, W_X_y.cpu().detach()))
+            memory_weights = torch.cat((memory_weights, torch.from_numpy(W_X_y)))
 
         # Update the memory set with the selected subset and weights
         self.tasks[self.task_index].memory_x = memory_x
@@ -428,7 +437,7 @@ class ContinualLearningManager(ABC):
         grads_X = torch.autograd.grad(inputs_X, model.parameters(), create_graph=True)
         grads_X = torch.cat([g.view(-1) for g in grads_X if g is not None])
         
-        regularization_term = 0.01 * W_X_y.norm()**2
+        regularization_term = 0.001 * W_X_y.norm()**2
 
         # Compute the norm of the gradient difference squared
         norm_loss = (grads_D - grads_X).norm()**2 + regularization_term
@@ -443,36 +452,188 @@ class ContinualLearningManager(ABC):
         return residuals[0]
 
     def minimize_l_sub(self, D_x, D_y, W_D, X_y, Y_y, X_y_w, model):
-        # X_y_w = X_y_w.clone().detach().requires_grad_(True)
-
-        optimizer = torch.optim.SGD([X_y_w], lr=0.0001)
-
-        prev_grad = None
-        epsilon = 1  # Percent difference threshold
+        optimizer = torch.optim.Adam([X_y_w], lr=0.01)
         iteration = 0
-        continue_optimization = True
 
-        while continue_optimization:
+        while True:
             optimizer.zero_grad()
             loss = self.l_sub(D_x, D_y, W_D, X_y, Y_y, X_y_w, model)
             loss.backward(retain_graph=True)
 
-            if iteration % 100 == 0:
-                print(f"grad after loss backward: {X_y_w.grad}")
+            # Check if the gradient norm exceeds 100000 and clip if needed
+            if torch.norm(X_y_w.grad) > 100000:
+                torch.nn.utils.clip_grad_norm_(X_y_w, 10000)
+                print("Clipped gradients")
 
+            # Print gradient information every 10 iterations
+            if iteration % 50 == 0:
+                print(f"Iteration {iteration}, grad norm: {torch.norm(X_y_w.grad)}")
+
+            # Step the optimizer
             optimizer.step()
-            
-            if prev_grad is not None:
-                # Calculate the percent difference
-                percent_diff = torch.abs((X_y_w.grad - prev_grad) / prev_grad * 100)
-                if torch.all(percent_diff < epsilon):
-                    continue_optimization = False
 
-            prev_grad = X_y_w.grad.clone()  # Update the previous gradient
+            # Continue optimizing while the norm of the gradient is greater than 1
+            if torch.norm(X_y_w.grad) < 1:
+                print("Gradient norm is under 1, stopping optimization.")
+                break
+
+            # Add a fallback to prevent infinite loops
             iteration += 1
+            if iteration >= 2000:
+                print("Reached maximum iterations, stopping optimization.")
+                break
 
-            if iteration >= 500:
-                break  # Fallback in case the threshold is never met
+    def l_rep_OMP(self, x, y, model):
+        x = x.to(DEVICE)
+        y = y.to(DEVICE)
+
+        ce_loss = nn.CrossEntropyLoss(reduction='none')(model(x), y.long())
+        weighted_loss = self.memory_set_manager.beta * ce_loss
+        return weighted_loss.sum()
+
+    def l_rep_OMP_individual(self, x, y, model):
+        x = x.to(DEVICE)
+        y = y.to(DEVICE)
+        # Compute individual losses without reducing
+        ce_loss = nn.CrossEntropyLoss(reduction='none')(model(x), y.long())
+        weighted_loss = self.memory_set_manager.beta * ce_loss
+        return weighted_loss
+
+    def minimize_l_sub_OMP(self, D_x, D_y, X_y, Y_y, model):
+        inputs_D = self.l_rep_OMP(D_x, D_y, model)
+        grads_D = torch.autograd.grad(inputs_D, model.parameters(), create_graph=True)
+        grads_D = torch.cat([g.view(-1) for g in grads_D if g is not None])
+
+        grads = []
+
+        # Gradient from subset
+        for i, x in enumerate(X_y):
+            loss_i = self.l_rep_OMP_individual(x, Y_y[i], model)
+            grads_i = torch.autograd.grad(loss_i, model.parameters(), create_graph=True)
+        
+            # Flatten and concatenate the gradients
+            grads_i_flat = torch.cat([g.view(-1) for g in grads_i if g is not None])
+        
+            # Append the gradients to the list
+            grads.append(grads_i_flat)
+
+        grads_matrix = torch.stack(grads).detach().cpu().numpy()
+        grads_matrix = np.transpose(grads_matrix)
+    
+        grads_D_np = grads_D.detach().cpu().numpy()
+        # grads_X_np = grads_X.detach().cpu().numpy()
+        # grads_X_np = grads_X_np.reshape(-1, 1)
+
+        print(f"shape of grads X np is: {grads_matrix.shape}")
+        print(f"shape of grads D np is: {grads_D_np.shape}")
+
+        n_features = X_y.size(0)
+        print(f"# desired non_zero elems: {n_features}")
+
+        omp = OrthogonalMatchingPursuit(n_nonzero_coefs = n_features)  # Adjust the number of non-zero coefficients as needed
+        # omp = OrthogonalMatchingPursuit()
+        omp.fit(grads_matrix, grads_D_np)
+
+        w = omp.coef_
+        return w
+
+        # self.orthogonalmp(grads_X, grads_D)
+
+    def orthogonalmp(self, mat_a, b, tol=1e-4, nnz=None, positive=False):
+        """approximately solves min_x |x|_0 s.t.
+
+        Ax=b using Orthogonal Matching Pursuit
+
+        Args:
+            mat_a: design matrix of size (d, n)
+            b: measurement vector of length d
+            tol: solver tolerance
+            nnz: maximum number of nonzero coefficients (if None set to n)
+            positive: only allow positive nonzero coefficients
+
+        Returns:
+            vector of length n
+        """
+
+        mat_at = mat_a.T
+        _, n = mat_a.shape
+        if nnz is None:
+            nnz = n
+        x = np.zeros(n)
+        resid = np.copy(b)
+        normb = norm(b)
+        indices = []
+        x_i = []
+        for _ in range(nnz):
+            if norm(resid) / normb < tol:
+                break
+                projections = mat_at.dot(resid)
+            if positive:
+                index = np.argmax(projections)
+            else:
+                index = np.argmax(abs(projections))
+            if index in indices:
+                break
+            indices.append(index)
+            mat_ai = None
+            if len(indices) == 1:
+                mat_ai = mat_a[:, index]
+                x_i = projections[index] / mat_ai.T.dot(mat_ai)
+            else:
+                mat_ai = np.vstack([mat_ai, mat_a[:, index]])
+                x_i = solve(mat_ai.dot(mat_ai.T), mat_ai.dot(b), assume_a='sym')
+                if positive:
+                    while min(x_i) < 0.0:
+                        argmin = np.argmin(x_i)
+                        indices = indices[:argmin] + indices[argmin + 1 :]
+                        mat_ai = np.vstack([mat_ai[:argmin], mat_ai[argmin + 1 :]])
+                        x_i = solve(mat_ai.dot(mat_ai.T), mat_ai.dot(b), assume_a='sym')
+            resid = b - mat_ai.T.dot(x_i)
+
+        for i, index in enumerate(indices):
+            try:
+                x[index] += x_i[i]
+            except IndexError:
+                x[index] += x_i
+        return x
+
+
+    # def minimize_l_sub(self, D_x, D_y, W_D, X_y, Y_y, X_y_w, model):
+    #     # X_y_w = X_y_w.clone().detach().requires_grad_(True)
+
+    #     optimizer = torch.optim.Adam([X_y_w], lr=0.005)
+
+    #     prev_grad = None
+    #     epsilon = 0.1  # Percent difference threshold
+    #     iteration = 0
+    #     continue_optimization = True
+
+    #     while continue_optimization:
+    #         optimizer.zero_grad()
+    #         loss = self.l_sub(D_x, D_y, W_D, X_y, Y_y, X_y_w, model)
+    #         loss.backward(retain_graph=True)
+
+    #         if torch.norm(X_y_w.grad) > 100000:
+    #             torch.nn.utils.clip_grad_norm_(X_y_w, 1000)
+    #             print(f"Clipped gradients")
+
+    #         if iteration % 10 == 0:
+    #             print(f"grad after loss backward: {X_y_w.grad}")
+
+    #         optimizer.step()
+            
+    #         if iteration >= 100:
+    #             if prev_grad is not None:
+    #                 # Calculate the percent difference
+    #                 percent_diff = torch.abs((X_y_w.grad - prev_grad) / prev_grad * 100)
+    #                 if torch.all(percent_diff < epsilon):
+    #                     continue_optimization = False
+
+    #         prev_grad = X_y_w.grad.clone()  # Update the previous gradient
+    #         iteration += 1
+
+    #         if iteration >= 1000:
+    #             break  # Fallback in case the threshold is never met
 
 
         # for i in range(500):  # Number of optimization steps
