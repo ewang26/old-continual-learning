@@ -21,6 +21,7 @@ from torchvision.transforms.functional import to_tensor
 
 from torchvision.models import resnet18
 import torchvision.transforms as transforms
+from avalanche.training.supervised import ICaRL
 
 import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
@@ -571,29 +572,6 @@ class iCaRLNet(nn.Module):
         self.fc.weight.data[:out_features] = weight
         self.n_classes += n
 
-    def classify(self, x, transform):
-        batch_size = x.size(0)
-        if self.compute_means:
-            exemplar_means = []
-            with torch.no_grad():
-                for P_y in self.exemplar_sets:
-                    features = [self.feature_extractor(transform(Image.fromarray(ex)).unsqueeze(0)).squeeze().detach() / self.feature_extractor(transform(Image.fromarray(ex)).unsqueeze(0)).squeeze().detach().norm() for ex in P_y]
-                    mu_y = torch.stack(features).mean(0).squeeze() / torch.stack(features).mean(0).squeeze().norm()
-                    exemplar_means.append(mu_y)
-            self.exemplar_means = exemplar_means
-            self.compute_means = False
-            print("Done")
-
-        exemplar_means = torch.stack(self.exemplar_means)
-        means = torch.stack([exemplar_means] * batch_size)
-        means = means.transpose(1, 2)
-        feature = self.feature_extractor(x)
-        feature = feature.unsqueeze(2).expand_as(means)
-        dists = (feature - means).pow(2).sum(1).squeeze()
-        _, preds = dists.min(1)
-        return preds
-
-
     def construct_exemplar_set(self, images, labels, m, transform):
         """Construct an exemplar set for image set
 
@@ -609,55 +587,63 @@ class iCaRLNet(nn.Module):
 
                 mnist_grayscale_transform = transforms.Compose([transforms.Lambda(lambda x: torch.cat([x, x, x], dim=0))])
                 
-                print(f"img before in mnist is: {img.shape}")
-                # print(f"before checking image dim: {img.shape}")
-                if img.dim() == 3:  # Check if the channel dimension is missing for CIFAR?
-                    img = img.unsqueeze(0)  # Add a batch dimension if it's a single image
-                img = img.to(DEVICE)
-                
                 if img.dim() == 1: # If it's mnist, it is just 784 flattened
                     img = img.view(-1, 28, 28) # add the color channel and reshape
-                    print(f"img after first reshape: {img.shape}")
+                    # print(f"img after first reshape: {img.shape}")
                     img = mnist_grayscale_transform(img)
 
                 # print(f"img dimension is: {img.shape}")
-                print(f"img has shape: {img.shape}")
+                img = img.unsqueeze(0)
+                # print(f"img has shape: {img.shape}")
                 img = transform(img)  # Apply transformation
 
                 # Extract features
-                feature = self.feature_extractor(img).cpu().numpy()
-                feature = feature / np.linalg.norm(feature)  # Normalize
-                features.append(feature[0])
+                feature = self.feature_extractor(img.to(DEVICE))
+                feature = feature / torch.norm(feature)  # Normalize
+                features.append(feature)
+                # print(f"feature is: {feature}")
+                # print(f"features is: {features}")
 
-        features = np.array(features)
-        class_mean = np.mean(features, axis=0)
-        class_mean = class_mean / np.linalg.norm(class_mean) # normalize
+        # features = torch.tensor(features)
+        features = torch.stack(features)
+        class_mean = torch.mean(features, axis=0)
+        class_mean = class_mean / torch.norm(class_mean) # normalize
+
+        print(f"features shape is: {features.shape}")
+
+        print(f"Class mean shape is: {class_mean.shape}")
 
         exemplar_set = []
         exemplar_label = []
-        exemplar_features = [] # list of Variables of shape (feature_size,)
+        exemplar_features = []
         for k in range(m):
-            S = np.sum(exemplar_features, axis=0)
-            phi = features
-            mu = class_mean
-            mu_p = 1.0/(k+1) * (phi + S)
-            mu_p = mu_p / np.linalg.norm(mu_p)
-            i = np.argmin(np.sqrt(np.sum((mu - mu_p) ** 2, axis=1)))
+            min_val = 999999
+            arg_min_i = None
+            for i, feature_x in enumerate(features):
+                if k > 0:
+                    sum_inner = torch.sum(torch.stack(exemplar_features[:k]))
+                else: 
+                    sum_inner = torch.zeros_like(class_mean).to(DEVICE)
+                
+                sum_outer = 1/(k+1) * (feature_x + sum_inner) # k+1 to avoid divide by zero error since k is 0-indexed
+                normed_val = torch.linalg.norm(class_mean - sum_outer)
 
-            exemplar_set.append(images[i])
-            exemplar_features.append(features[i])
-            exemplar_label.append(labels[i])
+                if normed_val < min_val:
+                    min_val = normed_val
+                    arg_min_i = i
+                print(f"normed_val is {normed_val}")
+            print(f"at iter {k}, arg_min_i is {arg_min_i}")
+
+
+            exemplar_set.append(images[arg_min_i])
+            exemplar_features.append(features[arg_min_i])
+            exemplar_label.append(labels[arg_min_i])
             """
             #features = np.delete(features, i, axis=0)
             """
         
         self.exemplar_labels.append(np.array(exemplar_label))
         self.exemplar_sets.append(np.array(exemplar_set)) # this is exemplar_sets, not the exemplar_set being constructed here
-                
-
-    def reduce_exemplar_sets(self, m):
-        for y, P_y in enumerate(self.exemplar_sets):
-            self.exemplar_sets[y] = P_y[:m]
 
 
     def combine_dataset_with_exemplars(self):
@@ -791,7 +777,7 @@ class iCaRL(MemorySetManager):
         self.generator = torch.Generator().manual_seed(random_seed)
         self.memory_set_size = 0
 
-    def create_memory_set(self, x, y):
+    def create_memory_set(self, x, y): 
         """ Create or update memory set for new tasks """
         print(f"x.shape of incoming task data is {x.shape}, y.shape is {y.shape}")
  
@@ -802,7 +788,7 @@ class iCaRL(MemorySetManager):
         print(f"memory set size is {memory_set_size}")
         self.net.update_representation(x, y)  # update the model with new data
 
-        print("updated memory sets")
+        print("updated model representation")
 
         self.net.construct_exemplar_set(x, y, memory_set_size, transform_test)  # update the exemplar set for the new class
         # print(f"shape of memory set after construction is: {np.array(self.net.exemplar_sets).shape}")
@@ -828,7 +814,7 @@ class GCRMemorySetManager(MemorySetManager):
         self.generator = torch.Generator().manual_seed(random_seed)
         np.random.seed(random_seed)
         self.alpha = 0.1
-        self.beta = 0.5
+        self.beta = 0.1
         self.gamma = 1.5
         self.lambda_val = 1  # need to figure out this hyperparameter
 
