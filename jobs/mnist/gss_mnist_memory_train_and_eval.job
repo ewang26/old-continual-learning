@@ -35,7 +35,7 @@ source "${VENV_PATH}/bin/activate"
 
 # Run GSS training and evaluation
 # python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/GSS/config_mnist_grad_eval.yaml
-python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/GSS/config_mnist_train.yaml
+# python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/GSS/config_mnist_train.yaml
 
 # Run iCaRL training and evaluation
 # python ${MAIN_PATH}/main_batch.py --config ${MAIN_PATH}/configs/iCaRL/config_cifar10_grad_eval.yaml
