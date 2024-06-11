@@ -616,14 +616,18 @@ class iCaRLNet(nn.Module):
         exemplar_set = []
         exemplar_label = []
         exemplar_features = []
+
+        sum_inner = torch.zeros_like(class_mean).to(DEVICE) # base case for when there are no exemplars yet (k=0)
+
         for k in range(m):
-            min_val = 999999
+            min_val = float('inf')
             arg_min_i = None
-            for i, feature_x in enumerate(features):
-                if k > 0:
-                    sum_inner = torch.sum(torch.stack(exemplar_features[:k]))
-                else: 
-                    sum_inner = torch.zeros_like(class_mean).to(DEVICE)
+
+            for i, feature_x in enumerate(features): # this loop simulates the argmin process
+                # if k > 0:
+                #     sum_inner = torch.sum(torch.stack(exemplar_features[:k]))
+                # else: 
+                #     sum_inner = torch.zeros_like(class_mean).to(DEVICE)
                 
                 sum_outer = 1/(k+1) * (feature_x + sum_inner) # k+1 to avoid divide by zero error since k is 0-indexed
                 normed_val = torch.linalg.norm(class_mean - sum_outer)
@@ -631,13 +635,17 @@ class iCaRLNet(nn.Module):
                 if normed_val < min_val:
                     min_val = normed_val
                     arg_min_i = i
-                print(f"normed_val is {normed_val}")
+                # if i % 1000 == 0:
+                #     print(f"normed_val is {normed_val}")
             print(f"at iter {k}, arg_min_i is {arg_min_i}")
-
 
             exemplar_set.append(images[arg_min_i])
             exemplar_features.append(features[arg_min_i])
             exemplar_label.append(labels[arg_min_i])
+
+            print(f"Shape of exemplar_features is: {torch.stack(exemplar_features).shape}")
+            sum_inner = sum_inner.squeeze() + torch.stack(exemplar_features).sum(0)
+
             """
             #features = np.delete(features, i, axis=0)
             """
