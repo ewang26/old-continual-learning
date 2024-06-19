@@ -91,15 +91,19 @@ def compute_gradient_similarity(metric_list,
         os.makedirs(mem_save_dir, exist_ok=True) #changed this
 
         # loop through metric functions
+        print('looping through metrics:')
         for metric_index, metric_name in enumerate(metric_names):
+            print("metric name")
             metric = metric_list[metric_index] # metric function
             metric_save_dir = f'{mem_save_dir}/{metric_name}'
+            print(f"save dir: {mem_save_dir}")
             if not os.path.exists(metric_save_dir): os.mkdir(metric_save_dir)
 
             # loop through gradient types
+            print('looping through grad types:')
             for grad_type in tqdm(grad_type_arr, desc="Processing gradient types"):
                 result_file_path = f'{metric_save_dir}/{grad_type}_gradient_comp.npy'
-
+                print(f"result file path: {result_file_path}")
                 data_block = get_grad_dist(metric_func = metric, 
                                            p_vals = p_vals, 
                                            model_weight_types = model_weight_types, 
@@ -112,6 +116,7 @@ def compute_gradient_similarity(metric_list,
                                            num_runs = num_runs)
 
                 np.save(result_file_path, data_block)
+                print(f"saved {result_file_path}")
 
 def save_downstream_acc(p_vals, dataset_name, memory_method_arr, num_tasks):
     num_p = len(p_vals)
